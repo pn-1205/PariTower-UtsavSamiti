@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
-import { X, Lock, AlertTriangle, KeyRound, User } from 'lucide-react';
+import { X, Lock, KeyRound, User } from 'lucide-react';
 
 export default function LoginModal() {
   const { loginModalOpen, setLoginModalOpen, login } = useAuth();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,12 +22,6 @@ export default function LoginModal() {
     if (!res.success) {
       setError(res.error || 'Invalid credentials');
     }
-  };
-
-  const handleFillDemo = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError('');
   };
 
   return (
@@ -54,14 +48,6 @@ export default function LoginModal() {
           </button>
         </div>
 
-        {/* Warning Banner regarding initial development credentials */}
-        <div className="bg-amber-50 border-b border-amber-100 px-6 py-2.5 flex items-start gap-2.5 text-xs text-amber-900">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold">Security Notice:</span> Initial default login is <code>admin / admin</code>. Please change credentials before production deployment.
-          </div>
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
@@ -82,7 +68,7 @@ export default function LoginModal() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:border-rose-800 focus:outline-none"
-                placeholder="e.g. admin or rahul"
+                placeholder="Enter username"
               />
             </div>
           </div>
@@ -111,34 +97,6 @@ export default function LoginModal() {
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
-
-          {/* Quick Demo Login Buttons */}
-          <div className="pt-3 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-500 font-medium mb-2">Demo Accounts:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleFillDemo('admin', 'admin')}
-                className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-              >
-                Admin (admin)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillDemo('rahul', 'rahul123')}
-                className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-              >
-                Rahul (Entry User)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFillDemo('amit', 'amit123')}
-                className="px-2.5 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-colors"
-              >
-                Amit (Entry User)
-              </button>
-            </div>
-          </div>
         </form>
       </div>
     </div>
