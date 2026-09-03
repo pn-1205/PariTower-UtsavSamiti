@@ -77,9 +77,9 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 p-4 sm:p-5 rounded-2xl border border-orange-200/60">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-orange-600 text-white rounded-lg text-xs font-black">PTFC</span>
+            <span className="p-1.5 bg-orange-600 text-white rounded-lg text-xs font-black">PTUS</span>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-              Pari Tower Festival Committee
+              Pari Tower Utsav Samiti
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium">

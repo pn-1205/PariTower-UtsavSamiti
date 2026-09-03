@@ -41,7 +41,7 @@ export default function LoginModal() {
             </div>
             <div>
               <h3 className="font-bold text-lg leading-tight">Admin & Committee Login</h3>
-              <p className="text-xs text-orange-100">Pari Tower Festival Committee</p>
+              <p className="text-xs text-orange-100">Pari Tower Utsav Samiti</p>
             </div>
           </div>
           <button

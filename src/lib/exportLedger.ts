@@ -82,7 +82,7 @@ export function exportLedgerToExcel(
 
   // Build Sheet Data
   const sheetData: any[][] = [
-    ['PARI TOWER FESTIVAL COMMITTEE (PTFC)'],
+    ['PARI TOWER UTSAV SAMITI (PTUS)'],
     [`OFFICIAL FINANCIAL GENERAL LEDGER — AS ON ${nowStr.toUpperCase()}`],
     [''],
     ['FINANCIAL SUMMARY STATEMENT'],
@@ -187,7 +187,7 @@ export function exportLedgerToPdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('PARI TOWER FESTIVAL COMMITTEE (PTFC)', 24, 26);
+  doc.text('PARI TOWER UTSAV SAMITI (PTUS)', 24, 26);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -321,7 +321,7 @@ export function exportLedgerToPdf(
       const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
       doc.setFontSize(8);
       doc.setTextColor(150);
-      const footerText = `Pari Tower Festival Committee • Official Audit Ledger • Page ${currentPage} of ${pageCount}`;
+      const footerText = `Pari Tower Utsav Samiti • Official Audit Ledger • Page ${currentPage} of ${pageCount}`;
       doc.text(footerText, 24, doc.internal.pageSize.getHeight() - 12);
     },
   });

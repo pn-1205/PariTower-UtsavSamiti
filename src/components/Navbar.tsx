@@ -69,7 +69,7 @@ export default function Navbar() {
           {/* Brand Logo & Title */}
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 flex items-center justify-center text-white font-black text-base shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
-              PTFC
+              PTUS
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -77,11 +77,11 @@ export default function Navbar() {
                   Pari Tower
                 </span>
                 <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">
-                  Festival Committee
+                  Utsav Samiti
                 </span>
               </div>
               <p className="text-xs text-gray-500 font-medium hidden sm:block">
-                Pari Tower Festival Committee
+                Pari Tower Utsav Samiti
               </p>
             </div>
           </Link>
