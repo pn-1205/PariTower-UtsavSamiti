@@ -24,11 +24,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico?v=2' },
+      { url: '/logo.png?v=2', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+      { url: '/logo.png?v=2', sizes: '512x512', type: 'image/png' },
     ],
   },
 };
