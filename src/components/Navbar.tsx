@@ -14,7 +14,6 @@ import {
   Gift,
   Home,
   Users,
-  Search,
   BookOpen,
   Menu,
   X,
@@ -24,30 +23,6 @@ export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout, setLoginModalOpen, setAddDepositModalOpen, setAddExpenseModalOpen, setAddDonationModalOpen } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [searching, setSearching] = useState(false);
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length < 2) {
-      setSearchResults(null);
-      return;
-    }
-    setSearching(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data);
-      }
-    } catch (e) {
-      // ignore
-    } finally {
-      setSearching(false);
-    }
-  };
 
   const navLinks = [
     { name: 'Dashboard', href: '/', icon: Home },
@@ -80,30 +55,8 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Search Bar */}
-          <div className="flex-1 max-w-xs mx-4 hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search flat, donor, vendor..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => setSearchOpen(true)}
-                className="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-800 focus:bg-white transition-all"
-              />
-            </div>
-          </div>
-
           {/* Right Action: Auth & Quick Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
-            </button>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
@@ -236,96 +189,6 @@ export default function Navbar() {
               </Link>
             );
           })}
-        </div>
-      )}
-
-      {/* Global Quick Search Dropdown / Overlay */}
-      {searchOpen && (
-        <div className="border-t border-gray-200 bg-white p-4 shadow-xl">
-          <div className="max-w-4xl mx-auto space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Search Results for "{searchQuery}"
-              </span>
-              <button
-                onClick={() => {
-                  setSearchOpen(false);
-                  setSearchQuery('');
-                }}
-                className="text-xs text-gray-400 hover:text-gray-700 font-medium"
-              >
-                Close
-              </button>
-            </div>
-
-            {searching && (
-              <div className="py-6 text-center text-sm text-gray-500">Searching records...</div>
-            )}
-
-            {!searching && searchResults && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {searchResults.flats?.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">Flats</h4>
-                    <div className="space-y-1">
-                      {searchResults.flats.map((f: any) => {
-                        const num = f.altName || f.displayName.replace('-', '');
-                        return (
-                          <Link
-                            key={f.id}
-                            href={`/deposits?search=${encodeURIComponent(num)}`}
-                            onClick={() => setSearchOpen(false)}
-                            className="block p-2 rounded-lg hover:bg-rose-50 transition-colors border border-gray-100"
-                          >
-                            <div className="font-bold text-sm text-gray-900">Flat {num}</div>
-                            <div className="text-xs text-gray-500">Click to view deposits in ledger</div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {searchResults.deposits?.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-emerald-700 uppercase mb-2">Deposits</h4>
-                    <div className="space-y-1">
-                      {searchResults.deposits.map((d: any) => (
-                        <div key={d.id} className="p-2 rounded-lg bg-emerald-50/60 border border-emerald-100">
-                          <div className="flex justify-between text-sm font-bold text-emerald-900">
-                            <span>{d.contributorName}</span>
-                            <span>₹{d.amount.toLocaleString('en-IN')}</span>
-                          </div>
-                          <div className="text-xs text-emerald-700">
-                            {d.paymentMethod} • Received by {d.user}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {searchResults.expenses?.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-rose-700 uppercase mb-2">Expenses</h4>
-                    <div className="space-y-1">
-                      {searchResults.expenses.map((e: any) => (
-                        <div key={e.id} className="p-2 rounded-lg bg-rose-50/60 border border-rose-100">
-                          <div className="flex justify-between text-sm font-bold text-rose-900">
-                            <span>{e.paidTo}</span>
-                            <span>₹{e.amount.toLocaleString('en-IN')}</span>
-                          </div>
-                          <div className="text-xs text-rose-700">
-                            {e.category} • {e.description}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </header>
