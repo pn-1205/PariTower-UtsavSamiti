@@ -50,9 +50,22 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#faf8f5] text-stone-900 antialiased flex flex-col selection:bg-rose-900 selection:text-amber-100">
         <AuthProvider>
           <Navbar />
-          <main className="flex-1 pb-20 md:pb-10">
+          <main className="flex-1 pb-6">
             {children}
           </main>
+          <footer className="w-full py-4 px-4 text-center text-xs text-stone-500 border-t border-stone-200/60 pb-20 md:pb-6">
+            <p>
+              © {new Date().getFullYear()} Pari Tower Utsav Samiti. All rights reserved. • by{' '}
+              <a
+                href="https://numendynamics.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-stone-700 hover:text-rose-900 underline underline-offset-2 transition-colors"
+              >
+                numendynamics.in
+              </a>
+            </p>
+          </footer>
           <BottomNav />
           <GlobalModals />
         </AuthProvider>
