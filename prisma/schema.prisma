@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  username     String    @unique
+  passwordHash String
+  role         String    @default("ENTRY_USER") // "ADMIN", "ENTRY_USER"
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  depositsReceived   Deposit[]
+  expensesEntered    Expense[]
+  donationsReceived  Donation[]
+  attachmentsUploaded Attachment[]
+}
+
+model Flat {
+  id          String   @id @default(cuid())
+  floor       Int
+  flatNumber  Int
+  displayName String   @unique // e.g. "1-01", "5-12", "14-19"
+  altName     String?  // e.g. "101", "512", "1419"
+  ownerName   String?
+  ownerPhone  String?
+  isRefugee   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contributors Contributor[]
+}
+
+model Contributor {
+  id              String   @id @default(cuid())
+  contributorType String   // "flat" or "other"
+  flatId          String?
+  flat            Flat?    @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  name            String
+  category        String?  // "Resident", "Guest", "Relative/Friend", "Sponsor", "Business/Shop", "Organization", "Anonymous", "Other"
+  phone           String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  deposits   Deposit[]
+  donations  Donation[]
+}
+
+model Deposit {
+  id               String       @id @default(cuid())
+  contributorId    String
+  contributor      Contributor  @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  donorName        String?      // Compulsory manual donor name
+  amount           Float
+  paymentMethod    String       // "Cash", "UPI", "Bank Transfer", "Other"
+  receivedDate     DateTime     @default(now())
+  receivedByUserId String
+  receivedByUser   User         @relation(fields: [receivedByUserId], references: [id])
+  notes            String?
+  deletedAt        DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  attachments Attachment[]
+}
+
+model Donation {
+  id               String       @id @default(cuid())
+  contributorId    String
+  contributor      Contributor  @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  donorName        String?      // Compulsory manual donor name
+  donationType     String       // "Food" or "Other"
+  itemName         String
+  quantity         Float
+  unit             String       // "kg", "packets", "boxes", "bottles", "units", etc.
+  estimatedValue   Float?       // Non-monetary reference, strictly excluded from cash balance!
+  donationDate     DateTime     @default(now())
+  receivedByUserId String
+  receivedByUser   User         @relation(fields: [receivedByUserId], references: [id])
+  description      String?
+  notes            String?
+  deletedAt        DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  attachments Attachment[]
+}
+
+model Expense {
+  id              String       @id @default(cuid())
+  expenseCategory String       // "Food", "Decorations", "Sound System", "Venue", "Printing", "Transportation", "Materials", "Entertainment", "Utilities", "Volunteer/Staff", "Miscellaneous", "Other"
+  description     String
+  amount          Float
+  paymentMethod   String       // "Cash", "UPI", "Bank Transfer", "Other"
+  paidTo          String
+  expenseDate     DateTime     @default(now())
+  enteredByUserId String
+  enteredByUser   User         @relation(fields: [enteredByUserId], references: [id])
+  notes           String?
+  deletedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  attachments Attachment[]
+}
+
+model Attachment {
+  id               String    @id @default(cuid())
+  fileName         String
+  filePath         String
+  fileType         String
+  fileSize         Int
+  uploadedByUserId String
+  uploadedByUser   User      @relation(fields: [uploadedByUserId], references: [id])
+  depositId        String?
+  deposit          Deposit?  @relation(fields: [depositId], references: [id], onDelete: Cascade)
+  expenseId        String?
+  expense          Expense?  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  donationId       String?
+  donation         Donation? @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+}
