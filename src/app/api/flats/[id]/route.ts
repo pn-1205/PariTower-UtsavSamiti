@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/auth';
-import { maskPhoneNumber } from '@/lib/utils';
 
 export async function GET(
   request: Request,
@@ -75,8 +74,6 @@ export async function GET(
         flatNumber: flat.flatNumber,
         displayName: flat.displayName,
         altName: flat.altName,
-        ownerName: flat.ownerName,
-        ownerPhone: isAuthenticated ? flat.ownerPhone : maskPhoneNumber(flat.ownerPhone),
         isRefugee: flat.isRefugee,
         isContributed: totalMoney > 0 || (foodDonations + otherDonations) > 0,
         totalMoney,

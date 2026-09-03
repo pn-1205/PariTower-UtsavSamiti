@@ -68,8 +68,6 @@ async function main() {
         flatNumber: r.flatNumber,
         displayName: r.displayName,
         altName: r.altName,
-        ownerName: r.ownerName,
-        ownerPhone: r.ownerPhone,
         isRefugee: r.isRefugee,
         isActive: true,
       },
@@ -82,10 +80,10 @@ async function main() {
       data: {
         contributorType: 'flat',
         flatId: flat.id,
-        name: 'Flat ' + flat.displayName,
+        name: 'Flat ' + (flat.altName || flat.displayName),
         category: r.isRefugee ? 'Refugee Area' : 'Resident',
-        phone: r.ownerPhone,
-        notes: r.ownerName ? ('Owner: ' + r.ownerName.split('\n')[0]) : null,
+        phone: null,
+        notes: null,
       },
     });
 

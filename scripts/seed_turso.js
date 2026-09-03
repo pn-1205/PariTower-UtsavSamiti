@@ -48,16 +48,16 @@ async function seedTurso() {
     const contribId = `contrib_flat_${i + 1}`;
 
     batchStatements.push({
-      sql: `INSERT OR REPLACE INTO Flat (id, floor, flatNumber, displayName, altName, ownerName, ownerPhone, isRefugee, isActive, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      args: [flatId, r.floor, r.flatNumber, r.displayName, r.altName || null, r.ownerName || null, r.ownerPhone || null, r.isRefugee ? 1 : 0],
+      sql: `INSERT OR REPLACE INTO Flat (id, floor, flatNumber, displayName, altName, isRefugee, isActive, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      args: [flatId, r.floor, r.flatNumber, r.displayName, r.altName || null, r.isRefugee ? 1 : 0],
     });
 
     if (!r.isRefugee) {
       batchStatements.push({
         sql: `INSERT OR REPLACE INTO Contributor (id, contributorType, flatId, name, category, phone, notes, createdAt, updatedAt)
-              VALUES (?, 'flat', ?, ?, 'Resident', ?, null, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        args: [contribId, flatId, `Flat ${r.altName || r.displayName}`, r.ownerPhone || null],
+              VALUES (?, 'flat', ?, ?, 'Resident', null, null, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        args: [contribId, flatId, `Flat ${r.altName || r.displayName}`],
       });
     }
   }

@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/auth';
-import { maskPhoneNumber } from '@/lib/utils';
 
 export async function GET(request: Request) {
   try {
@@ -28,7 +27,6 @@ export async function GET(request: Request) {
       where.OR = [
         { displayName: { contains: q } },
         { altName: { contains: q } },
-        { ownerName: { contains: q } },
       ];
     }
 
@@ -81,8 +79,6 @@ export async function GET(request: Request) {
         flatNumber: flat.flatNumber,
         displayName: flat.displayName,
         altName: flat.altName,
-        ownerName: flat.ownerName,
-        ownerPhone: isAuthenticated ? flat.ownerPhone : maskPhoneNumber(flat.ownerPhone),
         isRefugee: flat.isRefugee,
         isContributed,
         totalMoney,

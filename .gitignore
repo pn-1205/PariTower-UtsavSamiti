@@ -34,3 +34,8 @@ yarn-error.log*
 *.pem
 Thumbs.db
 .vercel
+
+# Raw Spreadsheets & Confidential Election Data
+Pari_Election_Data.xlsx
+*.xlsx
+*.xls

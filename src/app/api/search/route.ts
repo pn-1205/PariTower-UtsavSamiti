@@ -23,7 +23,6 @@ export async function GET(request: Request) {
           OR: [
             { displayName: { contains: q } },
             { altName: { contains: q } },
-            { ownerName: { contains: q } },
           ],
         },
         take: 8,
@@ -56,6 +55,7 @@ export async function GET(request: Request) {
           deletedAt: null,
           OR: [
             { contributor: { name: { contains: q } } },
+            { donorName: { contains: q } },
             { notes: { contains: q } },
             { paymentMethod: { contains: q } },
           ],
@@ -69,8 +69,7 @@ export async function GET(request: Request) {
       flats: flats.map((f) => ({
         id: f.id,
         displayName: f.displayName,
-        ownerName: f.ownerName,
-        phone: isAuthenticated ? f.ownerPhone : maskPhoneNumber(f.ownerPhone),
+        altName: f.altName,
       })),
       contributors: contributors.map((c) => ({
         id: c.id,
@@ -88,7 +87,7 @@ export async function GET(request: Request) {
       })),
       deposits: deposits.map((d) => ({
         id: d.id,
-        contributorName: d.contributor.name,
+        contributorName: d.donorName || d.contributor.name,
         amount: d.amount,
         paymentMethod: d.paymentMethod,
         user: d.receivedByUser.name,

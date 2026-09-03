@@ -31,8 +31,6 @@ model Flat {
   flatNumber  Int
   displayName String   @unique // e.g. "1-01", "5-12", "14-19"
   altName     String?  // e.g. "101", "512", "1419"
-  ownerName   String?
-  ownerPhone  String?
   isRefugee   Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

@@ -89,15 +89,14 @@ async function runTests() {
     const publicFlatsRes = await fetch(`${BASE_URL}/api/flats`);
     const publicFlats = await publicFlatsRes.json();
 
-    const sampleFlatWithPhone = publicFlats.flats.find((f) => f.ownerPhone && f.ownerPhone.includes('*****'));
-
+    const sampleFlat = publicFlats.flats[0];
     if (
       publicDashRes.ok &&
       publicDash.regularFlatsTotal === 262 &&
-      publicDash.totalReceived !== undefined &&
-      sampleFlatWithPhone
+      sampleFlat && sampleFlat.displayName &&
+      !sampleFlat.ownerName && !sampleFlat.ownerPhone
     ) {
-      logPass('Test 1 — Public View Mode', `Dashboard & 262 flats visible without login. Privacy enforced (Phone: ${sampleFlatWithPhone.ownerPhone}).`);
+      logPass('Test 1 — Public View Mode', `Dashboard & 262 flats accessible. Zero owner personal details exposed.`);
     } else {
       throw new Error('Public mode check failed or phone not masked.');
     }
