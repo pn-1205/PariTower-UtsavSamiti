@@ -54,16 +54,20 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="w-full py-4 px-4 text-center text-xs text-stone-500 border-t border-stone-200/60 pb-20 md:pb-6">
-            <p>
-              © {new Date().getFullYear()} Pari Tower Utsav Samiti. All rights reserved. • by{' '}
-              <a
-                href="https://numendynamics.in"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-stone-700 hover:text-rose-900 underline underline-offset-2 transition-colors"
-              >
-                numendynamics.in
-              </a>
+            <p className="flex items-center justify-center gap-1.5 flex-wrap">
+              <span>Built with <span className="text-rose-600">❤️</span> for Pari Tower Utsav Samiti</span>
+              <span className="text-stone-300">•</span>
+              <span>
+                Powered by{' '}
+                <a
+                  href="https://numendynamics.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-stone-700 hover:text-rose-900 underline underline-offset-2 transition-colors"
+                >
+                  numendynamics.in
+                </a>
+              </span>
             </p>
           </footer>
           <BottomNav />
