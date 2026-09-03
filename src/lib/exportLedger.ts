@@ -328,3 +328,351 @@ export function exportLedgerToPdf(
 
   doc.save(filename);
 }
+// ==========================================
+// DEPOSITS / MONEY RECEIVED SPECIFIC EXPORTS
+// ==========================================
+
+export function exportDepositsToExcel(deposits: any[], totalAmount?: number) {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const filename = `Money_Received_as_on_${day}_${month}_${year}.xlsx`;
+
+  const total = totalAmount ?? deposits.reduce((acc, d) => acc + d.amount, 0);
+
+  const sheetData: any[][] = [
+    ['PARI TOWER UTSAV SAMITI (PTUS)'],
+    [`OFFICIAL MONEY RECEIVED (DEPOSITS) STATEMENT — AS ON ${day} ${month.toUpperCase()} ${year}`],
+    [''],
+    ['TOTAL MONEY RECEIVED (INR)', total],
+    ['TOTAL TRANSACTIONS RECORDED', deposits.length],
+    [''],
+    [
+      'Sr. No.',
+      'Date',
+      'Flat / Contributor',
+      'Donor Name',
+      'Amount (INR)',
+      'Payment Method',
+      'Received By',
+      'Notes & Remarks',
+    ],
+  ];
+
+  deposits.forEach((d, idx) => {
+    const flatStr = d.contributor?.flat
+      ? `Flat ${d.contributor.flat.altName || d.contributor.flat.displayName.replace('-', '')}`
+      : d.contributor?.name || 'External';
+    sheetData.push([
+      idx + 1,
+      formatDate(d.receivedDate),
+      flatStr,
+      d.donorName || d.contributor?.name || 'Anonymous',
+      d.amount,
+      d.paymentMethod || 'Cash',
+      d.receivedByUser?.name || 'Committee',
+      d.notes || '',
+    ]);
+  });
+
+  sheetData.push(['']);
+  sheetData.push(['TOTAL', '', '', '', total, '', '', '']);
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols'] = [
+    { wch: 8 },  // Sr No
+    { wch: 14 }, // Date
+    { wch: 20 }, // Flat / Contributor
+    { wch: 26 }, // Donor Name
+    { wch: 16 }, // Amount
+    { wch: 16 }, // Method
+    { wch: 20 }, // Received By
+    { wch: 35 }, // Notes
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Money Received');
+  XLSX.writeFile(wb, filename);
+}
+
+export function exportDepositsToPdf(deposits: any[], totalAmount?: number) {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const filename = `Money_Received_as_on_${day}_${month}_${year}.pdf`;
+
+  const total = totalAmount ?? deposits.reduce((acc, d) => acc + d.amount, 0);
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Header Banner (Emerald/Green theme for income)
+  doc.setFillColor(5, 150, 105); // emerald-600
+  doc.rect(0, 0, pageWidth, 52, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('PARI TOWER UTSAV SAMITI (PTUS)', 24, 26);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Official Money Received (Deposits) Statement', 24, 42);
+
+  const asOnText = `As On: ${day} ${month} ${year}`;
+  const asOnWidth = doc.getTextWidth(asOnText);
+  doc.text(asOnText, pageWidth - asOnWidth - 24, 32);
+
+  // Summary Card
+  const cardY = 64;
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(167, 243, 208);
+  doc.roundedRect(24, cardY, 260, 44, 6, 6, 'FD');
+  doc.setTextColor(6, 95, 70);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TOTAL MONEY RECEIVED', 34, cardY + 16);
+  doc.setFontSize(14);
+  doc.text(formatCurrency(total), 34, cardY + 34);
+
+  const tableRows = deposits.map((d, index) => {
+    const flatStr = d.contributor?.flat
+      ? `Flat ${d.contributor.flat.altName || d.contributor.flat.displayName.replace('-', '')}`
+      : d.contributor?.name || 'External';
+
+    return [
+      String(index + 1),
+      formatDate(d.receivedDate),
+      flatStr,
+      d.donorName || d.contributor?.name || '-',
+      formatCurrency(d.amount),
+      d.paymentMethod || 'Cash',
+      d.receivedByUser?.name || '-',
+      d.notes || '-',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 120,
+    margin: { left: 24, right: 24, bottom: 30 },
+    head: [[
+      '#',
+      'Date',
+      'Flat / Unit',
+      'Donor Name',
+      'Amount (INR)',
+      'Method',
+      'Received By',
+      'Notes & Remarks',
+    ]],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [5, 150, 105],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9,
+      halign: 'left',
+    },
+    styles: {
+      fontSize: 8,
+      cellPadding: 4,
+      overflow: 'linebreak',
+    },
+    columnStyles: {
+      0: { cellWidth: 24 },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 70, fontStyle: 'bold' },
+      3: { cellWidth: 150, fontStyle: 'bold' },
+      4: { cellWidth: 80, halign: 'right', fontStyle: 'bold', textColor: [4, 120, 87] },
+      5: { cellWidth: 65 },
+      6: { cellWidth: 90 },
+      7: { cellWidth: 'auto' },
+    },
+    didDrawPage: (data) => {
+      const pageCount = doc.internal.pages.length - 1;
+      const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      const footerText = `Pari Tower Utsav Samiti • Money Received Audit Statement • Page ${currentPage} of ${pageCount}`;
+      doc.text(footerText, 24, doc.internal.pageSize.getHeight() - 12);
+    },
+  });
+
+  doc.save(filename);
+}
+
+// ==========================================
+// EXPENSES SPECIFIC EXPORTS
+// ==========================================
+
+export function exportExpensesToExcel(expenses: any[], totalAmount?: number) {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const filename = `Expenses_as_on_${day}_${month}_${year}.xlsx`;
+
+  const total = totalAmount ?? expenses.reduce((acc, e) => acc + e.amount, 0);
+
+  const sheetData: any[][] = [
+    ['PARI TOWER UTSAV SAMITI (PTUS)'],
+    [`OFFICIAL FESTIVAL EXPENSES STATEMENT — AS ON ${day} ${month.toUpperCase()} ${year}`],
+    [''],
+    ['TOTAL EXPENSES PAID (INR)', total],
+    ['TOTAL EXPENSE VOUCHERS', expenses.length],
+    [''],
+    [
+      'Sr. No.',
+      'Date',
+      'Category',
+      'Paid To / Vendor',
+      'Description / Purpose',
+      'Amount (INR)',
+      'Payment Method',
+      'Entered By',
+    ],
+  ];
+
+  expenses.forEach((e, idx) => {
+    sheetData.push([
+      idx + 1,
+      formatDate(e.expenseDate),
+      e.expenseCategory,
+      e.paidTo,
+      e.description,
+      e.amount,
+      e.paymentMethod || 'Cash',
+      e.enteredByUser?.name || 'Committee',
+    ]);
+  });
+
+  sheetData.push(['']);
+  sheetData.push(['TOTAL', '', '', '', '', total, '', '']);
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols'] = [
+    { wch: 8 },  // Sr No
+    { wch: 14 }, // Date
+    { wch: 20 }, // Category
+    { wch: 26 }, // Paid To
+    { wch: 35 }, // Description
+    { wch: 16 }, // Amount
+    { wch: 16 }, // Method
+    { wch: 20 }, // Entered By
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Festival Expenses');
+  XLSX.writeFile(wb, filename);
+}
+
+export function exportExpensesToPdf(expenses: any[], totalAmount?: number) {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  const filename = `Expenses_as_on_${day}_${month}_${year}.pdf`;
+
+  const total = totalAmount ?? expenses.reduce((acc, e) => acc + e.amount, 0);
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Header Banner (Rose/Crimson theme for expenses)
+  doc.setFillColor(225, 29, 72); // rose-600
+  doc.rect(0, 0, pageWidth, 52, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('PARI TOWER UTSAV SAMITI (PTUS)', 24, 26);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Official Festival Expenses Statement', 24, 42);
+
+  const asOnText = `As On: ${day} ${month} ${year}`;
+  const asOnWidth = doc.getTextWidth(asOnText);
+  doc.text(asOnText, pageWidth - asOnWidth - 24, 32);
+
+  // Summary Card
+  const cardY = 64;
+  doc.setFillColor(255, 241, 242);
+  doc.setDrawColor(254, 205, 211);
+  doc.roundedRect(24, cardY, 260, 44, 6, 6, 'FD');
+  doc.setTextColor(159, 18, 57);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('TOTAL EXPENSES PAID', 34, cardY + 16);
+  doc.setFontSize(14);
+  doc.text(formatCurrency(total), 34, cardY + 34);
+
+  const tableRows = expenses.map((e, index) => {
+    return [
+      String(index + 1),
+      formatDate(e.expenseDate),
+      e.expenseCategory,
+      e.paidTo,
+      e.description,
+      formatCurrency(e.amount),
+      e.paymentMethod || 'Cash',
+      e.enteredByUser?.name || '-',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: 120,
+    margin: { left: 24, right: 24, bottom: 30 },
+    head: [[
+      '#',
+      'Date',
+      'Category',
+      'Paid To / Vendor',
+      'Description / Purpose',
+      'Amount (INR)',
+      'Method',
+      'Entered By',
+    ]],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [225, 29, 72],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9,
+      halign: 'left',
+    },
+    styles: {
+      fontSize: 8,
+      cellPadding: 4,
+      overflow: 'linebreak',
+    },
+    columnStyles: {
+      0: { cellWidth: 24 },
+      1: { cellWidth: 55 },
+      2: { cellWidth: 80, fontStyle: 'bold' },
+      3: { cellWidth: 120, fontStyle: 'bold' },
+      4: { cellWidth: 'auto' },
+      5: { cellWidth: 80, halign: 'right', fontStyle: 'bold', textColor: [190, 18, 60] },
+      6: { cellWidth: 65 },
+      7: { cellWidth: 85 },
+    },
+    didDrawPage: (data) => {
+      const pageCount = doc.internal.pages.length - 1;
+      const currentPage = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      const footerText = `Pari Tower Utsav Samiti • Festival Expenses Audit Statement • Page ${currentPage} of ${pageCount}`;
+      doc.text(footerText, 24, doc.internal.pageSize.getHeight() - 12);
+    },
+  });
+
+  doc.save(filename);
+}

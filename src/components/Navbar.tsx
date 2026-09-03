@@ -68,15 +68,17 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand Logo & Title */}
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 flex items-center justify-center text-white font-black text-base shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
-              PTUS
-            </div>
+            <img
+              src="/logo.png"
+              alt="Pari Tower Utsav Samiti"
+              className="w-10 h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover border border-slate-700/20"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-gray-900 text-base sm:text-lg leading-tight tracking-tight">
                   Pari Tower
                 </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-800 rounded-full">
+                <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-900 rounded-full">
                   Utsav Samiti
                 </span>
               </div>

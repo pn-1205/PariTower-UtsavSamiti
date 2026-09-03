@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, downloadCsv, EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
+import { exportExpensesToExcel, exportExpensesToPdf } from '@/lib/exportLedger';
 import {
   TrendingDown,
   Search,
@@ -12,6 +13,9 @@ import {
   Trash2,
   Tag,
   Store,
+  FileSpreadsheet,
+  FileText,
+  FileCode,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -112,20 +116,41 @@ export default function ExpensesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportExpensesToPdf(expenses, totalAmount)}
+            disabled={expenses.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download printable Expenses PDF"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
+          </button>
+
+          <button
+            onClick={() => exportExpensesToExcel(expenses, totalAmount)}
+            disabled={expenses.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download Excel spreadsheet (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </button>
+
           <button
             onClick={handleExportCsv}
             disabled={expenses.length === 0}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download raw CSV data"
           >
-            <Download className="w-4 h-4 text-rose-600" />
+            <FileCode className="w-4 h-4 text-rose-600" />
             Export CSV
           </button>
 
           {isAuthenticated && (
             <button
               onClick={() => setAddExpenseModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 ml-1"
             >
               <PlusCircle className="w-4 h-4" />
               + Add Expense

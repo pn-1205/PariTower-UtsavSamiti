@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, downloadCsv } from '@/lib/utils';
+import { exportDepositsToExcel, exportDepositsToPdf } from '@/lib/exportLedger';
 import {
   DollarSign,
   Search,
@@ -13,6 +14,9 @@ import {
   Building2,
   User,
   Filter,
+  FileSpreadsheet,
+  FileText,
+  FileCode,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -112,20 +116,41 @@ export default function DepositsPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportDepositsToPdf(deposits, totalAmount)}
+            disabled={deposits.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download printable Money Received PDF"
+          >
+            <FileText className="w-4 h-4" />
+            Export PDF
+          </button>
+
+          <button
+            onClick={() => exportDepositsToExcel(deposits, totalAmount)}
+            disabled={deposits.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download Excel spreadsheet (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Export Excel
+          </button>
+
           <button
             onClick={handleExportCsv}
             disabled={deposits.length === 0}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
+            title="Download raw CSV data"
           >
-            <Download className="w-4 h-4 text-emerald-600" />
+            <FileCode className="w-4 h-4 text-emerald-600" />
             Export CSV
           </button>
 
           {isAuthenticated && (
             <button
               onClick={() => setAddDepositModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 ml-1"
             >
               <PlusCircle className="w-4 h-4" />
               + Add Deposit
