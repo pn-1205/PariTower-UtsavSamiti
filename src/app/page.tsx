@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { getCached, setCached } from '@/lib/clientCache';
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -26,16 +27,17 @@ export default function DashboardPage() {
     refreshTrigger,
   } = useAuth();
 
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(() => getCached('dashboard'));
+  const [loading, setLoading] = useState(() => !getCached('dashboard'));
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
+      if (!data) setLoading(true);
       const res = await fetch('/api/dashboard');
       if (res.ok) {
         const json = await res.json();
         setData(json);
+        setCached('dashboard', json);
       }
     } catch (e) {
       console.error(e);

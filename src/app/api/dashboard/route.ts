@@ -4,94 +4,76 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // 1. Financial aggregates
-    const depositAggregate = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: { deletedAt: null },
-    });
-    const totalReceived = depositAggregate._sum.amount || 0;
-
-    const expenseAggregate = await prisma.expense.aggregate({
-      _sum: { amount: true },
-      where: { deletedAt: null },
-    });
-    const totalExpenses = expenseAggregate._sum.amount || 0;
-
-    const currentBalance = totalReceived - totalExpenses;
-
-    // 2. Flats stats (262 regular flats)
-    const regularFlatsTotal = await prisma.flat.count({
-      where: { isRefugee: false },
-    });
-
-    const contributedFlatsCount = await prisma.flat.count({
-      where: {
-        isRefugee: false,
-        OR: [
-          {
-            contributors: {
-              some: {
-                deposits: { some: { deletedAt: null } },
-              },
-            },
-          },
-          {
-            contributors: {
-              some: {
-                donations: { some: { deletedAt: null } },
-              },
-            },
-          },
-        ],
-      },
-    });
-
-    const pendingFlatsCount = Math.max(0, regularFlatsTotal - contributedFlatsCount);
-
-    // 3. Money breakdown
-    const flatDepositsAggregate = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: {
-        deletedAt: null,
-        contributor: { contributorType: 'flat' },
-      },
-    });
-    const receivedFromFlats = flatDepositsAggregate._sum.amount || 0;
-
-    const otherDepositsAggregate = await prisma.deposit.aggregate({
-      _sum: { amount: true },
-      where: {
-        deletedAt: null,
-        contributor: { contributorType: 'other' },
-      },
-    });
-    const receivedFromOther = otherDepositsAggregate._sum.amount || 0;
-
-    // 4. Expenses by category
-    const expenseCategoriesRaw = await prisma.expense.groupBy({
-      by: ['expenseCategory'],
-      _sum: { amount: true },
-      where: { deletedAt: null },
-      orderBy: { _sum: { amount: 'desc' } },
-    });
-    const expensesByCategory = expenseCategoriesRaw.map((e) => ({
-      category: e.expenseCategory,
-      amount: e._sum.amount || 0,
-    }));
-
-    // 5. In-kind counts & external contributors
-    const foodDonationsCount = await prisma.donation.count({
-      where: { deletedAt: null, donationType: 'Food' },
-    });
-    const otherDonationsCount = await prisma.donation.count({
-      where: { deletedAt: null, donationType: 'Other' },
-    });
-    const externalContributorsCount = await prisma.contributor.count({
-      where: { contributorType: 'other' },
-    });
-
-    // 6. Recent activity feed (recent 15 items: deposits, expenses, donations)
-    const [recentDeposits, recentExpenses, recentDonations] = await Promise.all([
+    // Execute all independent database queries in parallel for ultra-low latency
+    const [
+      depositAggregate,
+      expenseAggregate,
+      regularFlatsTotal,
+      contributedFlatsCount,
+      flatDepositsAggregate,
+      otherDepositsAggregate,
+      expenseCategoriesRaw,
+      foodDonationsCount,
+      otherDonationsCount,
+      externalContributorsCount,
+      recentDeposits,
+      recentExpenses,
+      recentDonations,
+    ] = await Promise.all([
+      // 1. Total money received sum
+      prisma.deposit.aggregate({
+        _sum: { amount: true },
+        where: { deletedAt: null },
+      }),
+      // 2. Total expenses sum
+      prisma.expense.aggregate({
+        _sum: { amount: true },
+        where: { deletedAt: null },
+      }),
+      // 3. Regular flats total
+      prisma.flat.count({
+        where: { isRefugee: false },
+      }),
+      // 4. Contributed flats count
+      prisma.flat.count({
+        where: {
+          isRefugee: false,
+          OR: [
+            { contributors: { some: { deposits: { some: { deletedAt: null } } } } },
+            { contributors: { some: { donations: { some: { deletedAt: null } } } } },
+          ],
+        },
+      }),
+      // 5. From flats sum
+      prisma.deposit.aggregate({
+        _sum: { amount: true },
+        where: { deletedAt: null, contributor: { contributorType: 'flat' } },
+      }),
+      // 6. From others sum
+      prisma.deposit.aggregate({
+        _sum: { amount: true },
+        where: { deletedAt: null, contributor: { contributorType: 'other' } },
+      }),
+      // 7. Expense categories
+      prisma.expense.groupBy({
+        by: ['expenseCategory'],
+        _sum: { amount: true },
+        where: { deletedAt: null },
+        orderBy: { _sum: { amount: 'desc' } },
+      }),
+      // 8. Food donations count
+      prisma.donation.count({
+        where: { deletedAt: null, donationType: 'Food' },
+      }),
+      // 9. Other donations count
+      prisma.donation.count({
+        where: { deletedAt: null, donationType: 'Other' },
+      }),
+      // 10. External contributors count
+      prisma.contributor.count({
+        where: { contributorType: 'other' },
+      }),
+      // 11. Recent deposits
       prisma.deposit.findMany({
         where: { deletedAt: null },
         orderBy: { receivedDate: 'desc' },
@@ -102,6 +84,7 @@ export async function GET() {
           attachments: true,
         },
       }),
+      // 12. Recent expenses
       prisma.expense.findMany({
         where: { deletedAt: null },
         orderBy: { expenseDate: 'desc' },
@@ -111,6 +94,7 @@ export async function GET() {
           attachments: true,
         },
       }),
+      // 13. Recent donations
       prisma.donation.findMany({
         where: { deletedAt: null },
         orderBy: { donationDate: 'desc' },
@@ -123,62 +107,89 @@ export async function GET() {
       }),
     ]);
 
-    const activity = [
-      ...recentDeposits.map((d) => ({
-        id: d.id,
-        kind: 'deposit' as const,
-        amount: d.amount,
-        title: d.contributor.name,
-        subtitle: `Received by ${d.receivedByUser.name}`,
-        paymentMethod: d.paymentMethod,
-        date: d.receivedDate,
-        notes: d.notes,
-        attachments: d.attachments,
-      })),
-      ...recentExpenses.map((e) => ({
-        id: e.id,
-        kind: 'expense' as const,
-        amount: e.amount,
-        title: e.paidTo,
-        subtitle: `${e.expenseCategory} • Entered by ${e.enteredByUser.name}`,
-        paymentMethod: e.paymentMethod,
-        date: e.expenseDate,
-        notes: e.description,
-        attachments: e.attachments,
-      })),
-      ...recentDonations.map((dn) => ({
-        id: dn.id,
-        kind: 'donation' as const,
-        amount: null,
-        title: `${dn.quantity} ${dn.unit} ${dn.itemName}`,
-        subtitle: `${dn.contributor.name} • Received by ${dn.receivedByUser.name}`,
-        paymentMethod: dn.donationType,
-        date: dn.donationDate,
-        notes: dn.description || dn.notes,
-        attachments: dn.attachments,
-      })),
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 15);
+    const totalReceived = depositAggregate._sum.amount || 0;
+    const totalExpenses = expenseAggregate._sum.amount || 0;
+    const currentBalance = totalReceived - totalExpenses;
+    const pendingFlatsCount = Math.max(0, regularFlatsTotal - contributedFlatsCount);
+    const receivedFromFlats = flatDepositsAggregate._sum.amount || 0;
+    const receivedFromOther = otherDepositsAggregate._sum.amount || 0;
 
-    return NextResponse.json({
-      totalReceived,
-      totalExpenses,
-      currentBalance,
-      regularFlatsTotal,
-      contributedFlatsCount,
-      pendingFlatsCount,
-      receivedFromFlats,
-      receivedFromOther,
-      expensesByCategory,
-      foodDonationsCount,
-      otherDonationCount: otherDonationsCount,
-      externalContributorsCount,
-      recentActivity: activity,
+    const expensesByCategory = expenseCategoriesRaw.map((e) => ({
+      category: e.expenseCategory,
+      amount: e._sum.amount || 0,
+    }));
+
+    // Merge recent activity
+    const activityList: any[] = [];
+
+    recentDeposits.forEach((dep) => {
+      activityList.push({
+        id: `dep-${dep.id}`,
+        type: 'deposit',
+        date: dep.receivedDate,
+        title: dep.donorName
+          ? `${dep.donorName} (${dep.contributor.name})`
+          : dep.contributor.name,
+        amount: dep.amount,
+        details: `${dep.paymentMethod} • Handled by ${dep.receivedByUser.name}`,
+        notes: dep.notes,
+        attachments: dep.attachments,
+      });
     });
-  } catch (error: any) {
-    console.error('Dashboard API error:', error);
+
+    recentExpenses.forEach((exp) => {
+      activityList.push({
+        id: `exp-${exp.id}`,
+        type: 'expense',
+        date: exp.expenseDate,
+        title: exp.paidTo,
+        amount: -exp.amount,
+        details: `${exp.expenseCategory} • ${exp.paymentMethod} • By ${exp.enteredByUser.name}`,
+        notes: exp.description,
+        attachments: exp.attachments,
+      });
+    });
+
+    recentDonations.forEach((don) => {
+      activityList.push({
+        id: `don-${don.id}`,
+        type: 'donation',
+        date: don.donationDate,
+        title: `${don.quantity} ${don.unit} ${don.itemName}`,
+        amount: null,
+        details: `${don.donationType} • From ${don.donorName || don.contributor.name}`,
+        notes: don.description,
+        attachments: don.attachments,
+      });
+    });
+
+    activityList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const recentActivity = activityList.slice(0, 10);
+
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard data.' },
-      { status: 500 }
+      {
+        totalReceived,
+        totalExpenses,
+        currentBalance,
+        regularFlatsTotal,
+        contributedFlatsCount,
+        pendingFlatsCount,
+        receivedFromFlats,
+        receivedFromOther,
+        expensesByCategory,
+        foodDonationsCount,
+        otherDonationCount: otherDonationsCount,
+        externalContributorsCount,
+        recentActivity,
+      },
+      {
+        headers: {
+          'Cache-Control': 's-maxage=1, stale-while-revalidate=5',
+        },
+      }
     );
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    return NextResponse.json({ error: 'Failed to fetch dashboard data' }, { status: 500 });
   }
 }

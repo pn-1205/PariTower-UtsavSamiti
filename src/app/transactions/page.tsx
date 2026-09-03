@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { exportLedgerToExcel, exportLedgerToPdf, exportLedgerToCsv } from '@/lib/exportLedger';
+import { getCached, setCached } from '@/lib/clientCache';
 import {
   BookOpen,
   Search,
@@ -18,9 +18,9 @@ import {
 
 export default function TransactionsPage() {
   const { setLightboxAttachment, refreshTrigger } = useAuth();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [summaryData, setSummaryData] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>(() => getCached('transactions') || []);
+  const [loading, setLoading] = useState(() => !getCached('transactions'));
+  const [summaryData, setSummaryData] = useState<any>(() => getCached('summaryData'));
 
   // Filters
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense' | 'donation'>('all');
@@ -28,7 +28,7 @@ export default function TransactionsPage() {
 
   const fetchTransactionsAndSummary = async () => {
     try {
-      setLoading(true);
+      if (transactions.length === 0) setLoading(true);
       const params = new URLSearchParams();
       if (typeFilter !== 'all') params.set('type', typeFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
@@ -41,14 +41,19 @@ export default function TransactionsPage() {
       if (tRes.ok) {
         const json = await tRes.json();
         setTransactions(json.transactions || []);
+        if (typeFilter === 'all' && !searchQuery.trim()) {
+          setCached('transactions', json.transactions || []);
+        }
       }
       if (dRes.ok) {
         const dJson = await dRes.json();
-        setSummaryData({
+        const sumObj = {
           totalReceived: dJson.totalReceived,
           totalExpenses: dJson.totalExpenses,
           currentBalance: dJson.currentBalance,
-        });
+        };
+        setSummaryData(sumObj);
+        setCached('summaryData', sumObj);
       }
     } catch (e) {
       console.error(e);
@@ -61,15 +66,18 @@ export default function TransactionsPage() {
     fetchTransactionsAndSummary();
   }, [typeFilter, searchQuery, refreshTrigger]);
 
-  const handleExcelExport = () => {
+  const handleExcelExport = async () => {
+    const { exportLedgerToExcel } = await import('@/lib/exportLedger');
     exportLedgerToExcel(transactions, summaryData);
   };
 
-  const handlePdfExport = () => {
+  const handlePdfExport = async () => {
+    const { exportLedgerToPdf } = await import('@/lib/exportLedger');
     exportLedgerToPdf(transactions, summaryData);
   };
 
-  const handleCsvExport = () => {
+  const handleCsvExport = async () => {
+    const { exportLedgerToCsv } = await import('@/lib/exportLedger');
     exportLedgerToCsv(transactions);
   };
 

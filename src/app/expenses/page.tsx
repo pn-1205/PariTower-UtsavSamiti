@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, downloadCsv, EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
-import { exportExpensesToExcel, exportExpensesToPdf } from '@/lib/exportLedger';
+import { getCached, setCached } from '@/lib/clientCache';
 import {
   TrendingDown,
   Search,
@@ -29,8 +29,8 @@ export default function ExpensesPage() {
     triggerRefresh,
   } = useAuth();
 
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<any[]>(() => getCached('expenses') || []);
+  const [loading, setLoading] = useState(() => !getCached('expenses'));
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +66,16 @@ export default function ExpensesPage() {
   }, [searchQuery, categoryFilter, methodFilter, refreshTrigger]);
 
   const totalAmount = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+
+  const handleExportPdf = async () => {
+    const { exportExpensesToPdf } = await import('@/lib/exportLedger');
+    exportExpensesToPdf(expenses, totalAmount);
+  };
+
+  const handleExportExcel = async () => {
+    const { exportExpensesToExcel } = await import('@/lib/exportLedger');
+    exportExpensesToExcel(expenses, totalAmount);
+  };
 
   const handleExportCsv = () => {
     const headers = ['Date', 'Category', 'Description', 'Amount (INR)', 'Paid To', 'Payment Method', 'Entered By', 'Notes'];
@@ -118,7 +128,7 @@ export default function ExpensesPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => exportExpensesToPdf(expenses, totalAmount)}
+            onClick={handleExportPdf}
             disabled={expenses.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
             title="Download printable Expenses PDF"
@@ -128,7 +138,7 @@ export default function ExpensesPage() {
           </button>
 
           <button
-            onClick={() => exportExpensesToExcel(expenses, totalAmount)}
+            onClick={handleExportExcel}
             disabled={expenses.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
             title="Download Excel spreadsheet (.xlsx)"

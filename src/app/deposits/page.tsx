@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, downloadCsv } from '@/lib/utils';
-import { exportDepositsToExcel, exportDepositsToPdf } from '@/lib/exportLedger';
+import { getCached, setCached } from '@/lib/clientCache';
 import {
   DollarSign,
   Search,
@@ -30,8 +30,8 @@ export default function DepositsPage() {
     triggerRefresh,
   } = useAuth();
 
-  const [deposits, setDeposits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deposits, setDeposits] = useState<any[]>(() => getCached('deposits') || []);
+  const [loading, setLoading] = useState(() => !getCached('deposits'));
 
   // Filters
   const [methodFilter, setMethodFilter] = useState('all');
@@ -67,6 +67,16 @@ export default function DepositsPage() {
   }, [methodFilter, sourceFilter, searchQuery, refreshTrigger]);
 
   const totalAmount = deposits.reduce((acc, d) => acc + (d.amount || 0), 0);
+
+  const handleExportPdf = async () => {
+    const { exportDepositsToPdf } = await import('@/lib/exportLedger');
+    exportDepositsToPdf(deposits, totalAmount);
+  };
+
+  const handleExportExcel = async () => {
+    const { exportDepositsToExcel } = await import('@/lib/exportLedger');
+    exportDepositsToExcel(deposits, totalAmount);
+  };
 
   const handleExportCsv = () => {
     const headers = ['Date', 'Donor Name', 'Flat / Source', 'Amount (INR)', 'Payment Method', 'Received By', 'Notes'];
@@ -118,7 +128,7 @@ export default function DepositsPage() {
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={() => exportDepositsToPdf(deposits, totalAmount)}
+            onClick={handleExportPdf}
             disabled={deposits.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
             title="Download printable Money Received PDF"
@@ -128,7 +138,7 @@ export default function DepositsPage() {
           </button>
 
           <button
-            onClick={() => exportDepositsToExcel(deposits, totalAmount)}
+            onClick={handleExportExcel}
             disabled={deposits.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 disabled:opacity-50"
             title="Download Excel spreadsheet (.xlsx)"

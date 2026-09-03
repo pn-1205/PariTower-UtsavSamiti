@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { invalidateCache } from '@/lib/clientCache';
 
 export interface User {
   id: string;
@@ -56,7 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [lightboxAttachment, setLightboxAttachment] = useState<AttachmentItem | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
+  const triggerRefresh = () => {
+    invalidateCache();
+    setRefreshTrigger((prev) => prev + 1);
+  };
 
   const fetchCurrentUser = async () => {
     try {
