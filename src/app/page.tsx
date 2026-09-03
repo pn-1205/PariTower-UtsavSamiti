@@ -75,61 +75,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
-      {/* Welcome & Public Transparency Notice */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-rose-950/10 via-amber-600/5 to-rose-900/5 p-4 sm:p-5 rounded-2xl border border-rose-200/60">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-rose-950 text-amber-200 rounded-lg text-xs font-black border border-rose-800">PTUS</span>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-              Pari Tower Utsav Samiti
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1 font-medium">
-            Real-time financial transparency for all 262 Pari Tower residences.
-          </p>
-        </div>
-
-        {/* Action button / Status badge */}
-        <div>
-          {isAuthenticated ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setAddDepositModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                + Deposit
-              </button>
-              <button
-                onClick={() => setAddExpenseModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                + Expense
-              </button>
-              <button
-                onClick={() => setAddDonationModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                + Donation
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-rose-200 text-xs text-rose-950 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Public Transparency View</span>
-              <button
-                onClick={() => setLoginModalOpen(true)}
-                className="ml-2 font-bold text-rose-900 hover:text-rose-950 underline font-bold"
-              >
-                Admin Login
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* TOP FINANCIAL CARDS (HIGHLIGHTED BALANCE) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* Total Received */}

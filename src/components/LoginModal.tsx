@@ -36,9 +36,11 @@ export default function LoginModal() {
         {/* Header */}
         <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-800 px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-white/10 rounded-lg">
-              <Lock className="w-5 h-5" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Pari Tower Utsav Samiti"
+              className="w-9 h-9 rounded-xl object-cover shadow-sm"
+            />
             <div>
               <h3 className="font-bold text-lg leading-tight">Admin & Committee Login</h3>
               <p className="text-xs text-amber-200">Pari Tower Utsav Samiti</p>

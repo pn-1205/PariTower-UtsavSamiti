@@ -23,7 +23,13 @@ export const metadata: Metadata = {
     description: 'Live financial accounts, collections, expenses & transparent general ledger for Pari Tower Utsav Samiti.',
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+    ],
   },
 };
 

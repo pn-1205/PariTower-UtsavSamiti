@@ -71,20 +71,12 @@ export default function Navbar() {
             <img
               src="/logo.png"
               alt="Pari Tower Utsav Samiti"
-              className="w-10 h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover border border-slate-700/20"
+              className="w-10 h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover"
             />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-900 text-base sm:text-lg leading-tight tracking-tight">
-                  Pari Tower
-                </span>
-                <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-900 rounded-full">
-                  Utsav Samiti
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 font-medium hidden sm:block">
+              <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">
                 Pari Tower Utsav Samiti
-              </p>
+              </span>
             </div>
           </Link>
 
