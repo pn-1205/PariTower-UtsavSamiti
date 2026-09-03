@@ -79,7 +79,7 @@ export default function ContributorsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <User className="w-6 h-6 text-orange-600" />
+            <User className="w-6 h-6 text-rose-900" />
             <h1 className="text-xl sm:text-2xl font-black text-gray-900">External Contributors</h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -90,7 +90,7 @@ export default function ContributorsPage() {
         {isAuthenticated && (
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 self-start sm:self-center"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-900 hover:bg-rose-950 text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 self-start sm:self-center"
           >
             <PlusCircle className="w-4 h-4" />
             + Add Contributor
@@ -107,7 +107,7 @@ export default function ContributorsPage() {
             placeholder="Search contributor name or notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none"
           />
         </div>
 
@@ -115,7 +115,7 @@ export default function ContributorsPage() {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none font-medium"
+            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none font-medium"
           >
             <option value="all">All Contributor Categories</option>
             {CONTRIBUTOR_CATEGORIES.map((c) => (
@@ -148,7 +148,7 @@ export default function ContributorsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-bold text-base text-gray-900">{c.name}</h3>
-                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-800 rounded mt-1">
+                    <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-rose-100 text-orange-800 rounded mt-1">
                       {c.category || 'External'}
                     </span>
                   </div>
@@ -254,7 +254,7 @@ export default function ContributorsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 font-bold rounded-xl disabled:opacity-50"
+                  className="flex-1 py-2 text-sm text-white bg-rose-900 hover:bg-rose-950 font-bold rounded-xl disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : 'Save Contributor'}
                 </button>

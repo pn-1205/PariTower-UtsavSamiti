@@ -87,7 +87,7 @@ export default function TransactionsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-orange-600" />
+            <BookOpen className="w-6 h-6 text-rose-900" />
             <h1 className="text-xl sm:text-2xl font-black text-gray-900">Unified General Ledger</h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -123,7 +123,7 @@ export default function TransactionsPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
             title="Download raw CSV data"
           >
-            <FileCode className="w-4 h-4 text-orange-600" />
+            <FileCode className="w-4 h-4 text-rose-900" />
             Export CSV
           </button>
         </div>
@@ -138,7 +138,7 @@ export default function TransactionsPage() {
             placeholder="Search by donor, flat number, vendor, category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none"
           />
         </div>
 

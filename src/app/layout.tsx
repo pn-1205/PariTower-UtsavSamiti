@@ -41,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col selection:bg-orange-500 selection:text-white">
+      <body className="min-h-screen bg-[#faf8f5] text-stone-900 antialiased flex flex-col selection:bg-rose-900 selection:text-amber-100">
         <AuthProvider>
           <Navbar />
           <main className="flex-1 pb-20 md:pb-10">

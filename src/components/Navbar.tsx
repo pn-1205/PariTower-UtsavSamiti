@@ -98,7 +98,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => setSearchOpen(true)}
-                className="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all"
+                className="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-800 focus:bg-white transition-all"
               />
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function Navbar() {
                     <div className="text-xs font-semibold text-gray-900 leading-none">
                       {user?.name}
                     </div>
-                    <div className="text-[10px] text-orange-600 font-bold uppercase tracking-wider mt-0.5">
+                    <div className="text-[10px] text-rose-900 font-bold uppercase tracking-wider mt-0.5">
                       {user?.role === 'ADMIN' ? 'ADMIN' : 'ENTRY'}
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-sm shadow-orange-600/20 transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold bg-rose-900 hover:bg-rose-950 text-white rounded-lg shadow-sm shadow-rose-900/20 transition-all active:scale-95"
               >
                 <Lock className="w-3.5 h-3.5" />
                 Admin Login
@@ -189,11 +189,11 @@ export default function Navbar() {
                 href={link.href}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-orange-50 text-orange-700 font-semibold'
+                    ? 'bg-rose-50 text-rose-900 font-bold'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-orange-600' : 'text-gray-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-rose-900' : 'text-gray-400'}`} />
                 {link.name}
               </Link>
             );
@@ -205,11 +205,11 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1 shadow-lg">
           {isAuthenticated && (
-            <div className="p-3 bg-orange-50 rounded-xl mb-3 border border-orange-100 flex items-center justify-between">
+            <div className="p-3 bg-rose-50 rounded-xl mb-3 border border-orange-100 flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 font-medium">Logged in as</p>
                 <p className="text-sm font-bold text-gray-900">{user?.name}</p>
-                <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-orange-200 text-orange-800 rounded mt-0.5">
+                <span className="inline-block px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-900 rounded mt-0.5">
                   {user?.role === 'ADMIN' ? 'Administrator' : 'Entry User'}
                 </span>
               </div>
@@ -235,7 +235,7 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-orange-500 text-white font-bold shadow-sm'
+                    ? 'bg-rose-900 text-white font-bold shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -283,7 +283,7 @@ export default function Navbar() {
                             key={f.id}
                             href={`/deposits?search=${encodeURIComponent(num)}`}
                             onClick={() => setSearchOpen(false)}
-                            className="block p-2 rounded-lg hover:bg-orange-50 transition-colors border border-gray-100"
+                            className="block p-2 rounded-lg hover:bg-rose-50 transition-colors border border-gray-100"
                           >
                             <div className="font-bold text-sm text-gray-900">Flat {num}</div>
                             <div className="text-xs text-gray-500">Click to view deposits in ledger</div>

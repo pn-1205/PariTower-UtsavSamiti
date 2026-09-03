@@ -132,7 +132,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Users className="w-6 h-6 text-orange-600" />
+            <Users className="w-6 h-6 text-rose-900" />
             <h1 className="text-xl sm:text-2xl font-black text-gray-900">User Management</h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -142,7 +142,7 @@ export default function UserManagementPage() {
 
         <button
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 self-start sm:self-center"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-900 hover:bg-rose-950 text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 self-start sm:self-center"
         >
           <PlusCircle className="w-4 h-4" />
           + Create New User
@@ -208,7 +208,7 @@ export default function UserManagementPage() {
                   <td className="px-5 py-3.5 text-right whitespace-nowrap space-x-2">
                     <button
                       onClick={() => setResetModalUser(u)}
-                      className="p-1.5 text-gray-400 hover:text-orange-600 rounded-lg hover:bg-orange-50"
+                      className="p-1.5 text-gray-400 hover:text-rose-900 rounded-lg hover:bg-rose-50"
                       title="Reset Password"
                     >
                       <KeyRound className="w-4 h-4" />
@@ -301,7 +301,7 @@ export default function UserManagementPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2 text-sm text-white bg-orange-600 hover:bg-orange-700 font-bold rounded-xl disabled:opacity-50"
+                  className="flex-1 py-2 text-sm text-white bg-rose-900 hover:bg-rose-950 font-bold rounded-xl disabled:opacity-50"
                 >
                   {submitting ? 'Creating...' : 'Create Account'}
                 </button>
@@ -342,7 +342,7 @@ export default function UserManagementPage() {
                 <button
                   type="submit"
                   disabled={resetting}
-                  className="flex-1 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl disabled:opacity-50"
+                  className="flex-1 py-2 text-xs font-bold text-white bg-rose-900 hover:bg-rose-950 rounded-xl disabled:opacity-50"
                 >
                   {resetting ? 'Saving...' : 'Update Password'}
                 </button>

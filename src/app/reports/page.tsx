@@ -99,7 +99,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <FileText className="w-6 h-6 text-orange-600" />
+          <FileText className="w-6 h-6 text-rose-900" />
           <h1 className="text-xl sm:text-2xl font-black text-gray-900">Festival Reports & Analytics</h1>
         </div>
         <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -146,7 +146,7 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
           <div>
             <h3 className="font-bold text-gray-900 text-base sm:text-lg flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-600" />
+              <Building2 className="w-5 h-5 text-rose-900" />
               Flat Collection by Floor (1 to 14)
             </h3>
             <p className="text-xs text-gray-500">
@@ -157,7 +157,7 @@ export default function ReportsPage() {
             onClick={exportFloorReportCsv}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl self-start sm:self-center"
           >
-            <Download className="w-3.5 h-3.5 text-orange-600" />
+            <Download className="w-3.5 h-3.5 text-rose-900" />
             Export Floor CSV
           </button>
         </div>
@@ -257,7 +257,7 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
           <div>
             <h3 className="font-bold text-gray-900 text-base sm:text-lg flex items-center gap-2">
-              <Users className="w-5 h-5 text-orange-600" />
+              <Users className="w-5 h-5 text-rose-900" />
               Committee User Activity Audit
             </h3>
             <p className="text-xs text-gray-500">
@@ -268,7 +268,7 @@ export default function ReportsPage() {
             onClick={exportUserActivityCsv}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl self-start sm:self-center"
           >
-            <Download className="w-3.5 h-3.5 text-orange-600" />
+            <Download className="w-3.5 h-3.5 text-rose-900" />
             Export User Activity CSV
           </button>
         </div>
@@ -278,7 +278,7 @@ export default function ReportsPage() {
             <div key={u.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-sm text-gray-900">{u.name}</span>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-orange-100 text-orange-800 rounded">
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-rose-100 text-orange-800 rounded">
                   {u.role}
                 </span>
               </div>

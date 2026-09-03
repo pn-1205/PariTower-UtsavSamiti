@@ -50,7 +50,7 @@ export default function BottomNav() {
               key={item.name}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-                isActive ? 'text-orange-600 font-bold' : 'text-gray-500 hover:text-gray-900'
+                isActive ? 'text-rose-900 font-bold' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />

@@ -76,10 +76,10 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
       {/* Welcome & Public Transparency Notice */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 p-4 sm:p-5 rounded-2xl border border-orange-200/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-rose-950/10 via-amber-600/5 to-rose-900/5 p-4 sm:p-5 rounded-2xl border border-rose-200/60">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 bg-orange-600 text-white rounded-lg text-xs font-black">PTUS</span>
+            <span className="p-1.5 bg-rose-950 text-amber-200 rounded-lg text-xs font-black border border-rose-800">PTUS</span>
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
               Pari Tower Utsav Samiti
             </h1>
@@ -116,12 +116,12 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-orange-200 text-xs text-orange-950 font-medium">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-rose-200 text-xs text-rose-950 font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span>Public Transparency View</span>
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="ml-2 font-bold text-orange-600 hover:text-orange-700 underline"
+                className="ml-2 font-bold text-rose-900 hover:text-rose-950 underline font-bold"
               >
                 Admin Login
               </button>
@@ -175,13 +175,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Current Balance (HIGH VISIBILITY) */}
-        <div className="bg-gradient-to-br from-orange-600 to-amber-600 text-white p-5 rounded-2xl shadow-lg shadow-orange-600/20 hover:shadow-xl transition-all relative overflow-hidden">
+        <div className="bg-gradient-to-br from-rose-950 via-rose-900 to-rose-800 text-white p-5 rounded-2xl shadow-xl shadow-rose-950/25 hover:shadow-2xl transition-all relative overflow-hidden border border-rose-700/30">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-orange-100 flex items-center gap-1.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-200 flex items-center gap-1.5">
               <Scale className="w-4 h-4" />
               CURRENT BALANCE
             </span>
-            <span className="text-[11px] font-bold bg-white/20 px-2 py-0.5 rounded-full backdrop-blur">
+            <span className="text-[11px] font-bold bg-amber-400/20 text-amber-200 border border-amber-300/30 px-2 py-0.5 rounded-full backdrop-blur">
               Net Cash
             </span>
           </div>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
             <div className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               {formatCurrency(currentBalance)}
             </div>
-            <p className="text-xs text-orange-100 font-medium mt-1">
+            <p className="text-xs text-rose-100 font-medium mt-1">
               {formatCurrency(totalReceived)} received − {formatCurrency(totalExpenses)} spent
             </p>
           </div>
