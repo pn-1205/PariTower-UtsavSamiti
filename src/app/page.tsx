@@ -91,9 +91,6 @@ export default function DashboardPage() {
             <div className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               {formatCurrency(totalReceived)}
             </div>
-            <p className="text-xs text-emerald-600 font-medium mt-1">
-              Flats ({formatCurrency(receivedFromFlats)}) + Other ({formatCurrency(receivedFromOther)})
-            </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
         </div>
@@ -112,9 +109,6 @@ export default function DashboardPage() {
             <div className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
               {formatCurrency(totalExpenses)}
             </div>
-            <p className="text-xs text-rose-600 font-medium mt-1">
-              Decorations, Sound, Catering & Venue
-            </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
         </div>
