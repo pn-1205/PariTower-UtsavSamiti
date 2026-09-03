@@ -1,12 +1,15 @@
-export const FESTIVAL_OPTIONS = [
+export const DEFAULT_FESTIVALS = [
   'Ganesh Festival',
   'Navratri Festival',
   'Diwali Celebration',
   'Holi Celebration',
+  'Dahi Handi',
   'General / Society Events',
-] as const;
+];
 
-export type FestivalName = (typeof FESTIVAL_OPTIONS)[number] | string;
+export const FESTIVAL_OPTIONS = DEFAULT_FESTIVALS;
+
+export type FestivalName = string;
 
 export const FY_OPTIONS = [
   { label: 'FY 2026-27 (Current)', value: '2026-27' },

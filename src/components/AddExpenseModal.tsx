@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, TrendingDown } from 'lucide-react';
 import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
+import FestivalCombobox from './FestivalCombobox';
 
 export default function AddExpenseModal() {
   const { addExpenseModalOpen, setAddExpenseModalOpen, user, triggerRefresh } = useAuth();
@@ -142,20 +143,12 @@ export default function AddExpenseModal() {
           )}
 
           {/* Festival / Event Selection */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-              Festival / Event *
-            </label>
-            <select
-              value={festival}
-              onChange={(e) => setFestival(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white font-semibold"
-            >
-              {FESTIVAL_OPTIONS.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
+          <FestivalCombobox
+            value={festival}
+            onChange={setFestival}
+            label="Festival / Event *"
+            placeholder="Select or type new festival (e.g. Dahi Handi)..."
+          />
 
           {/* Category */}
           <div>

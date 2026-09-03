@@ -18,6 +18,8 @@ import {
   FileCode,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import TopFestivalSelector from '@/components/TopFestivalSelector';
+import { getCurrentFinancialYear } from '@/lib/festivalUtils';
 
 export default function ExpensesPage() {
   const {
@@ -32,6 +34,10 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<any[]>(() => getCached('expenses') || []);
   const [loading, setLoading] = useState(() => !getCached('expenses'));
 
+  // Top Filter Selectors
+  const [selectedFy, setSelectedFy] = useState<string>(getCurrentFinancialYear());
+  const [selectedFestival, setSelectedFestival] = useState<string>('all');
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -45,6 +51,8 @@ export default function ExpensesPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (selectedFestival !== 'all') params.set('festival', selectedFestival);
+      if (selectedFy !== 'all') params.set('fy', selectedFy);
       if (categoryFilter !== 'all') params.set('category', categoryFilter);
       if (methodFilter !== 'all') params.set('method', methodFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
@@ -63,7 +71,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [searchQuery, categoryFilter, methodFilter, refreshTrigger]);
+  }, [selectedFestival, selectedFy, searchQuery, categoryFilter, methodFilter, refreshTrigger]);
 
   const totalAmount = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -169,6 +177,14 @@ export default function ExpensesPage() {
         </div>
       </div>
 
+      {/* Modern Top-of-Screen Festival & FY Selector */}
+      <TopFestivalSelector
+        selectedFy={selectedFy}
+        onFyChange={setSelectedFy}
+        selectedFestival={selectedFestival}
+        onFestivalChange={setSelectedFestival}
+      />
+
       {/* Summary Banner */}
       <div className="bg-rose-50/80 border border-rose-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -248,9 +264,14 @@ export default function ExpensesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
-                      {e.expenseCategory}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70">
+                        {e.festival || 'Ganesh Festival'}
+                      </span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
+                        {e.expenseCategory}
+                      </span>
+                    </div>
                     <h4 className="font-bold text-sm text-gray-900 mt-1">{e.description}</h4>
                     <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                       <Store className="w-3.5 h-3.5" />
@@ -306,6 +327,7 @@ export default function ExpensesPage() {
               <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Festival</th>
                   <th className="px-5 py-3.5">Category</th>
                   <th className="px-5 py-3.5">Description</th>
                   <th className="px-5 py-3.5">Amount</th>
@@ -321,6 +343,11 @@ export default function ExpensesPage() {
                   <tr key={e.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap font-medium text-xs">
                       {formatDate(e.expenseDate)}
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-900 border border-rose-200">
+                        {e.festival || 'Ganesh Festival'}
+                      </span>
                     </td>
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800">

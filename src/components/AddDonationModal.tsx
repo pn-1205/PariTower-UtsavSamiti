@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { DONATION_TYPES, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Gift, Building2, User, Sparkles, Info, Check } from 'lucide-react';
 import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
+import FestivalCombobox from './FestivalCombobox';
 
 export default function AddDonationModal() {
   const { addDonationModalOpen, setAddDonationModalOpen, user, triggerRefresh } = useAuth();
@@ -409,20 +410,12 @@ export default function AddDonationModal() {
           </div>
 
           {/* Festival / Event Selection */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-              Festival / Event *
-            </label>
-            <select
-              value={festival}
-              onChange={(e) => setFestival(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-semibold"
-            >
-              {FESTIVAL_OPTIONS.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-            </select>
-          </div>
+          <FestivalCombobox
+            value={festival}
+            onChange={setFestival}
+            label="Festival / Event *"
+            placeholder="Select or type new festival (e.g. Dahi Handi)..."
+          />
 
           {/* Donation Type & Item Name */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

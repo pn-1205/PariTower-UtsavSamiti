@@ -2,12 +2,13 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { ensureFestivalRegistered } from '@/lib/festivalServer';
 
 export async function POST(request: Request) {
   try {
     const user = await requireAuth();
     const body = await request.json();
-    const { fromFestival, toFestival, amount, transferDate, notes } = body;
+    let { fromFestival, toFestival, amount, transferDate, notes } = body;
 
     if (!fromFestival || !toFestival) {
       return NextResponse.json(
@@ -15,6 +16,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    fromFestival = await ensureFestivalRegistered(fromFestival);
+    toFestival = await ensureFestivalRegistered(toFestival);
 
     if (fromFestival === toFestival) {
       return NextResponse.json(

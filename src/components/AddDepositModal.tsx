@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import { PAYMENT_METHODS, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Building2, User, Sparkles, Check } from 'lucide-react';
 import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
+import FestivalCombobox from './FestivalCombobox';
 
 export default function AddDepositModal() {
   const { addDepositModalOpen, setAddDepositModalOpen, user, triggerRefresh } = useAuth();
@@ -390,22 +391,12 @@ export default function AddDepositModal() {
           </div>
 
           {/* Festival / Event Selection */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-              Festival / Event *
-            </label>
-            <select
-              value={festival}
-              onChange={(e) => setFestival(e.target.value)}
-              className="w-full px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white shadow-sm"
-            >
-              {FESTIVAL_OPTIONS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FestivalCombobox
+            value={festival}
+            onChange={setFestival}
+            label="Festival / Event *"
+            placeholder="Select or type new festival (e.g. Dahi Handi)..."
+          />
 
           {/* Amount & Payment Method */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

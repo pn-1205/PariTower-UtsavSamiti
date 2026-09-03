@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { X, ArrowRightLeft, Calendar, IndianRupee, FileText } from 'lucide-react';
-import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
+import { DEFAULT_FESTIVALS } from '@/lib/festivalUtils';
 
 export default function TransferFundModal() {
   const { transferFundModalOpen, setTransferFundModalOpen, triggerRefresh } = useAuth();
+  const [festivalList, setFestivalList] = useState<string[]>(DEFAULT_FESTIVALS);
   const [fromFestival, setFromFestival] = useState<string>('Ganesh Festival');
   const [toFestival, setToFestival] = useState<string>('Navratri Festival');
   const [amount, setAmount] = useState<string>('');
@@ -14,6 +15,21 @@ export default function TransferFundModal() {
   const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/festivals');
+        if (res.ok) {
+          const d = await res.json();
+          if (d.festivals) {
+            setFestivalList(Array.from(new Set([...DEFAULT_FESTIVALS, ...d.festivals])));
+          }
+        }
+      } catch (e) {}
+    }
+    if (transferFundModalOpen) load();
+  }, [transferFundModalOpen]);
 
   if (!transferFundModalOpen) return null;
 
@@ -103,7 +119,7 @@ export default function TransferFundModal() {
                 onChange={(e) => setFromFestival(e.target.value)}
                 className="w-full text-xs font-semibold px-2.5 py-2 bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-800 focus:outline-none"
               >
-                {FESTIVAL_OPTIONS.map((f) => (
+                {festivalList.map((f) => (
                   <option key={`from-${f}`} value={f}>
                     {f}
                   </option>
@@ -120,7 +136,7 @@ export default function TransferFundModal() {
                 onChange={(e) => setToFestival(e.target.value)}
                 className="w-full text-xs font-semibold px-2.5 py-2 bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
               >
-                {FESTIVAL_OPTIONS.map((f) => (
+                {festivalList.map((f) => (
                   <option key={`to-${f}`} value={f}>
                     {f}
                   </option>

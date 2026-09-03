@@ -19,6 +19,8 @@ import {
   FileCode,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import TopFestivalSelector from '@/components/TopFestivalSelector';
+import { getCurrentFinancialYear } from '@/lib/festivalUtils';
 
 export default function DepositsPage() {
   const {
@@ -33,6 +35,10 @@ export default function DepositsPage() {
   const [deposits, setDeposits] = useState<any[]>(() => getCached('deposits') || []);
   const [loading, setLoading] = useState(() => !getCached('deposits'));
 
+  // Top Filter Selectors
+  const [selectedFy, setSelectedFy] = useState<string>(getCurrentFinancialYear());
+  const [selectedFestival, setSelectedFestival] = useState<string>('all');
+
   // Filters
   const [methodFilter, setMethodFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
@@ -46,6 +52,8 @@ export default function DepositsPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      if (selectedFestival !== 'all') params.set('festival', selectedFestival);
+      if (selectedFy !== 'all') params.set('fy', selectedFy);
       if (methodFilter !== 'all') params.set('method', methodFilter);
       if (sourceFilter !== 'all') params.set('type', sourceFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
@@ -64,7 +72,7 @@ export default function DepositsPage() {
 
   useEffect(() => {
     fetchDeposits();
-  }, [methodFilter, sourceFilter, searchQuery, refreshTrigger]);
+  }, [selectedFestival, selectedFy, methodFilter, sourceFilter, searchQuery, refreshTrigger]);
 
   const totalAmount = deposits.reduce((acc, d) => acc + (d.amount || 0), 0);
 
@@ -169,6 +177,14 @@ export default function DepositsPage() {
         </div>
       </div>
 
+      {/* Modern Top-of-Screen Festival & FY Selector */}
+      <TopFestivalSelector
+        selectedFy={selectedFy}
+        onFyChange={setSelectedFy}
+        selectedFestival={selectedFestival}
+        onFestivalChange={setSelectedFestival}
+      />
+
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
         {/* Search */}
@@ -251,9 +267,14 @@ export default function DepositsPage() {
                           </span>
                         )}
                       </div>
-                      <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">
-                        {d.paymentMethod}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70">
+                          {d.festival || 'Ganesh Festival'}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">
+                          {d.paymentMethod}
+                        </span>
+                      </div>
                     </div>
 
                     <span className="text-lg font-black text-emerald-600">
@@ -302,6 +323,7 @@ export default function DepositsPage() {
               <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Festival</th>
                   <th className="px-5 py-3.5">Donor / Contributor</th>
                   <th className="px-5 py-3.5">Flat / Source</th>
                   <th className="px-5 py-3.5">Method</th>
@@ -318,6 +340,11 @@ export default function DepositsPage() {
                     <tr key={d.id} className="hover:bg-gray-50/60 transition-colors">
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap font-medium text-xs">
                         {formatDate(d.receivedDate)}
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-900 border border-rose-200">
+                          {d.festival || 'Ganesh Festival'}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5 font-bold text-gray-900">
                         {d.donorName || d.contributor.name}

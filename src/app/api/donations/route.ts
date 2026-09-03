@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { getFyDateRange } from '@/lib/festivalUtils';
+import { ensureFestivalRegistered } from '@/lib/festivalServer';
 
 export async function GET(request: Request) {
   try {
@@ -139,10 +140,11 @@ export async function POST(request: Request) {
 
     const parsedEst = estimatedValue ? parseFloat(estimatedValue) : null;
     const dateVal = donationDate ? new Date(donationDate) : new Date();
+    const validFestival = await ensureFestivalRegistered(festival);
 
     const donation = await prisma.donation.create({
       data: {
-        festival: festival?.trim() || 'Ganesh Festival',
+        festival: validFestival,
         contributorId,
         donorName: cleanDonorName,
         donationType,

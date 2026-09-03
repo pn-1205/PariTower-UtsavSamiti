@@ -30,7 +30,6 @@ export default function Navbar() {
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Donations', href: '/donations', icon: Gift },
     { name: 'Ledger', href: '/transactions', icon: BookOpen },
-    { name: 'Reports', href: '/reports', icon: FileText },
   ];
 
   if (isAdmin) {

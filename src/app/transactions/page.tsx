@@ -9,6 +9,7 @@ import {
   FY_OPTIONS,
   getCurrentFinancialYear,
 } from '@/lib/festivalUtils';
+import TopFestivalSelector from '@/components/TopFestivalSelector';
 import {
   BookOpen,
   Search,
@@ -147,60 +148,15 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* TOP SELECTOR BAR: Financial Year & Festival Selectors + Transfer Fund Action */}
-      <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-stone-200/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          {/* FY Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
-              FY:
-            </span>
-            <select
-              value={selectedFy}
-              onChange={(e) => setSelectedFy(e.target.value)}
-              className="text-xs font-bold text-stone-900 bg-stone-100 hover:bg-stone-200/70 border border-stone-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-rose-900 focus:outline-none transition-colors cursor-pointer"
-            >
-              {FY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Festival Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              Festival:
-            </span>
-            <select
-              value={selectedFestival}
-              onChange={(e) => setSelectedFestival(e.target.value)}
-              className="text-xs font-bold text-stone-900 bg-stone-100 hover:bg-stone-200/70 border border-stone-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-rose-900 focus:outline-none transition-colors cursor-pointer"
-            >
-              <option value="all">All Festivals</option>
-              {FESTIVAL_OPTIONS.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Action Button: Inter-Festival Fund Transfer */}
-        {isAuthenticated && (
-          <button
-            onClick={() => setTransferFundModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-rose-900 via-rose-950 to-stone-900 text-amber-200 text-xs font-bold rounded-xl shadow-sm hover:brightness-110 transition-all active:scale-95 shrink-0"
-          >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-amber-300" />
-            + Transfer Fund
-          </button>
-        )}
-      </div>
+      {/* Modern Top-of-Screen Festival & FY Selector + Transfer Fund Action */}
+      <TopFestivalSelector
+        selectedFy={selectedFy}
+        onFyChange={setSelectedFy}
+        selectedFestival={selectedFestival}
+        onFestivalChange={setSelectedFestival}
+        showTransferButton={isAuthenticated}
+        onOpenTransferModal={() => setTransferFundModalOpen(true)}
+      />
 
       {/* FILTERED FINANCIAL SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
