@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { DONATION_TYPES, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Gift, Building2, User, Sparkles, Info, Check } from 'lucide-react';
+import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
 
 export default function AddDonationModal() {
   const { addDonationModalOpen, setAddDonationModalOpen, user, triggerRefresh } = useAuth();
 
   const [fromType, setFromType] = useState<'flat' | 'other'>('flat');
+  const [festival, setFestival] = useState<string>('Ganesh Festival');
   const [flats, setFlats] = useState<any[]>([]);
   const [flatNumberInput, setFlatNumberInput] = useState('');
   const [otherContributors, setOtherContributors] = useState<any[]>([]);
@@ -159,6 +161,7 @@ export default function AddDonationModal() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          festival,
           contributorId: finalContributorId || undefined,
           contributorName: finalContributorName || undefined,
           contributorCategory,
@@ -403,6 +406,22 @@ export default function AddDonationModal() {
             <p className="text-[11px] text-gray-500 mt-1">
               Enter individual donor or family member name. Supports multiple entries from the same flat with different donors.
             </p>
+          </div>
+
+          {/* Festival / Event Selection */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+              Festival / Event *
+            </label>
+            <select
+              value={festival}
+              onChange={(e) => setFestival(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white font-semibold"
+            >
+              {FESTIVAL_OPTIONS.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
           </div>
 
           {/* Donation Type & Item Name */}

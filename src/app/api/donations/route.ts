@@ -2,16 +2,30 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { getFyDateRange } from '@/lib/festivalUtils';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const typeParam = searchParams.get('type'); // 'Food', 'Other'
     const searchParam = searchParams.get('search');
+    const festivalParam = searchParams.get('festival');
+    const fyParam = searchParams.get('fy');
 
     const where: any = {
       deletedAt: null,
     };
+
+    if (festivalParam && festivalParam !== 'all') {
+      where.festival = festivalParam;
+    }
+
+    if (fyParam && fyParam !== 'all') {
+      const { start, end } = getFyDateRange(fyParam);
+      if (start && end) {
+        where.donationDate = { gte: start, lte: end };
+      }
+    }
 
     if (typeParam && typeParam !== 'all') {
       where.donationType = typeParam;
@@ -56,6 +70,7 @@ export async function POST(request: Request) {
     const user = await requireAuth();
     const body = await request.json();
     let {
+      festival,
       contributorId,
       contributorName,
       contributorCategory,
@@ -102,15 +117,15 @@ export async function POST(request: Request) {
     }
 
     if (!contributorId) {
-      return NextResponse.json({ error: 'Contributor / Flat is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Contributor/Flat is required.' }, { status: 400 });
     }
 
     if (!donationType) {
-      return NextResponse.json({ error: 'Donation Type is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Donation type is required.' }, { status: 400 });
     }
 
     if (!itemName || !itemName.trim()) {
-      return NextResponse.json({ error: 'Item Name is required.' }, { status: 400 });
+      return NextResponse.json({ error: 'Item name is required.' }, { status: 400 });
     }
 
     const parsedQty = parseFloat(quantity);
@@ -127,6 +142,7 @@ export async function POST(request: Request) {
 
     const donation = await prisma.donation.create({
       data: {
+        festival: festival?.trim() || 'Ganesh Festival',
         contributorId,
         donorName: cleanDonorName,
         donationType,
@@ -164,7 +180,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, donation });
   } catch (error: any) {
     if (error.message === 'UNAUTHORIZED') {
-      return NextResponse.json({ error: 'Please login to add donations.' }, { status: 401 });
+      return NextResponse.json({ error: 'Please login to record donations.' }, { status: 401 });
     }
     console.error('Donation POST error:', error);
     return NextResponse.json({ error: 'Failed to record donation.' }, { status: 500 });

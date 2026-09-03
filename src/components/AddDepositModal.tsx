@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { PAYMENT_METHODS, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Building2, User, Sparkles, Check } from 'lucide-react';
+import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
 
 export default function AddDepositModal() {
   const { addDepositModalOpen, setAddDepositModalOpen, user, triggerRefresh } = useAuth();
 
   const [fromType, setFromType] = useState<'flat' | 'other'>('flat');
+  const [festival, setFestival] = useState<string>('Ganesh Festival');
   const [flats, setFlats] = useState<any[]>([]);
   const [flatNumberInput, setFlatNumberInput] = useState('');
   const [otherContributors, setOtherContributors] = useState<any[]>([]);
@@ -150,6 +152,7 @@ export default function AddDepositModal() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          festival,
           contributorId: finalContributorId || undefined,
           contributorName: finalContributorName || undefined,
           contributorCategory,
@@ -384,6 +387,24 @@ export default function AddDepositModal() {
             <p className="text-[11px] text-gray-500 mt-1">
               Enter individual donor or family member name. Supports multiple entries from the same flat with different donors.
             </p>
+          </div>
+
+          {/* Festival / Event Selection */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+              Festival / Event *
+            </label>
+            <select
+              value={festival}
+              onChange={(e) => setFestival(e.target.value)}
+              className="w-full px-3 py-2 text-sm font-bold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white shadow-sm"
+            >
+              {FESTIVAL_OPTIONS.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Amount & Payment Method */}

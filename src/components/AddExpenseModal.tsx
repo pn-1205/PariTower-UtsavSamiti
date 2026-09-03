@@ -4,10 +4,12 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, TrendingDown } from 'lucide-react';
+import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
 
 export default function AddExpenseModal() {
   const { addExpenseModalOpen, setAddExpenseModalOpen, user, triggerRefresh } = useAuth();
 
+  const [festival, setFestival] = useState<string>('Ganesh Festival');
   const [expenseCategory, setExpenseCategory] = useState<string>('Food');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -77,6 +79,7 @@ export default function AddExpenseModal() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          festival,
           expenseCategory,
           description: description.trim(),
           amount: parseFloat(amount),
@@ -137,6 +140,22 @@ export default function AddExpenseModal() {
               <span>{error}</span>
             </div>
           )}
+
+          {/* Festival / Event Selection */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+              Festival / Event *
+            </label>
+            <select
+              value={festival}
+              onChange={(e) => setFestival(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white font-semibold"
+            >
+              {FESTIVAL_OPTIONS.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Category */}
           <div>

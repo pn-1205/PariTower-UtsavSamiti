@@ -142,14 +142,14 @@ export default function DashboardPage() {
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div>
-            <h3 className="font-bold text-gray-900 text-base sm:text-lg">Recent Financial Activity</h3>
+            <h3 className="font-bold text-gray-900 text-base sm:text-lg">Recent Activity (Last 2 Months)</h3>
             <p className="text-xs text-gray-500">
-              Live chronological stream of deposits, expenses, and donations.
+              Live stream of money received, expenses, and donations from the last 60 days.
             </p>
           </div>
           <Link
             href="/transactions"
-            className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5"
+            className="text-xs font-bold text-rose-900 hover:text-rose-950 flex items-center gap-0.5"
           >
             Complete Ledger →
           </Link>
@@ -157,15 +157,15 @@ export default function DashboardPage() {
 
         <div className="divide-y divide-gray-100 mt-2">
           {recentActivity.length === 0 ? (
-            <div className="py-10 text-center text-gray-400 text-sm">No activity recorded yet.</div>
+            <div className="py-10 text-center text-gray-400 text-sm">No activity recorded in the last 2 months.</div>
           ) : (
             recentActivity.map((item: any) => {
-              const isDeposit = item.kind === 'deposit';
-              const isExpense = item.kind === 'expense';
+              const isDeposit = item.kind === 'deposit' || item.type === 'deposit';
+              const isExpense = item.kind === 'expense' || item.type === 'expense';
 
               return (
                 <div
-                  key={`${item.kind}-${item.id}`}
+                  key={`${item.type || item.kind}-${item.id}`}
                   className="py-3.5 flex items-start justify-between gap-3 hover:bg-gray-50/60 rounded-xl px-2 transition-colors"
                 >
                   <div className="flex items-start gap-3">
@@ -188,10 +188,13 @@ export default function DashboardPage() {
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                         <span className="font-bold text-sm text-gray-900">{item.title}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-900 rounded border border-rose-200">
+                          {item.festival || 'Ganesh Festival'}
+                        </span>
                         <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
-                          {item.paymentMethod || item.kind}
+                          {item.paymentMethod || item.kind || item.type}
                         </span>
                         {item.attachments?.length > 0 && (
                           <button
@@ -203,7 +206,7 @@ export default function DashboardPage() {
                           </button>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.details || item.subtitle}</p>
                       {item.notes && <p className="text-[11px] text-gray-400 italic mt-0.5">{item.notes}</p>}
                     </div>
                   </div>
@@ -219,7 +222,7 @@ export default function DashboardPage() {
                       }`}
                     >
                       {isDeposit && `+${formatCurrency(item.amount)}`}
-                      {isExpense && `-${formatCurrency(item.amount)}`}
+                      {isExpense && `-${formatCurrency(Math.abs(item.amount))}`}
                       {!isDeposit && !isExpense && 'In-Kind'}
                     </div>
                     <span className="text-[10px] text-gray-400 font-medium">

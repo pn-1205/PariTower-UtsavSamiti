@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { getFyDateRange } from '@/lib/festivalUtils';
 
 export async function GET(request: Request) {
   try {
@@ -10,10 +11,23 @@ export async function GET(request: Request) {
     const typeParam = searchParams.get('type'); // 'flat' or 'other'
     const searchParam = searchParams.get('search');
     const flatIdParam = searchParams.get('flatId');
+    const festivalParam = searchParams.get('festival');
+    const fyParam = searchParams.get('fy');
 
     const where: any = {
       deletedAt: null,
     };
+
+    if (festivalParam && festivalParam !== 'all') {
+      where.festival = festivalParam;
+    }
+
+    if (fyParam && fyParam !== 'all') {
+      const { start, end } = getFyDateRange(fyParam);
+      if (start && end) {
+        where.receivedDate = { gte: start, lte: end };
+      }
+    }
 
     if (methodParam && methodParam !== 'all') {
       where.paymentMethod = methodParam;
@@ -66,6 +80,7 @@ export async function POST(request: Request) {
     const user = await requireAuth();
     const body = await request.json();
     let {
+      festival,
       contributorId,
       contributorName,
       contributorCategory,
@@ -124,6 +139,7 @@ export async function POST(request: Request) {
 
     const deposit = await prisma.deposit.create({
       data: {
+        festival: festival?.trim() || 'Ganesh Festival',
         contributorId,
         donorName: cleanDonorName,
         amount: parsedAmount,

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
+import { getFyDateRange } from '@/lib/festivalUtils';
 
 export async function GET(request: Request) {
   try {
@@ -9,10 +10,23 @@ export async function GET(request: Request) {
     const categoryParam = searchParams.get('category');
     const methodParam = searchParams.get('method');
     const searchParam = searchParams.get('search');
+    const festivalParam = searchParams.get('festival');
+    const fyParam = searchParams.get('fy');
 
     const where: any = {
       deletedAt: null,
     };
+
+    if (festivalParam && festivalParam !== 'all') {
+      where.festival = festivalParam;
+    }
+
+    if (fyParam && fyParam !== 'all') {
+      const { start, end } = getFyDateRange(fyParam);
+      if (start && end) {
+        where.expenseDate = { gte: start, lte: end };
+      }
+    }
 
     if (categoryParam && categoryParam !== 'all') {
       where.expenseCategory = categoryParam;
@@ -55,7 +69,7 @@ export async function POST(request: Request) {
   try {
     const user = await requireAuth();
     const body = await request.json();
-    const { expenseCategory, description, amount, paymentMethod, paidTo, expenseDate, notes, attachment } = body;
+    const { festival, expenseCategory, description, amount, paymentMethod, paidTo, expenseDate, notes, attachment } = body;
 
     if (!expenseCategory) {
       return NextResponse.json({ error: 'Expense Category is required.' }, { status: 400 });
@@ -82,13 +96,14 @@ export async function POST(request: Request) {
 
     const expense = await prisma.expense.create({
       data: {
+        festival: festival?.trim() || 'Ganesh Festival',
         expenseCategory,
         description: description.trim(),
         amount: parsedAmount,
         paymentMethod,
         paidTo: paidTo.trim(),
         expenseDate: dateVal,
-        enteredByUserId: user.id, // Automatically recorded from authenticated session!
+        enteredByUserId: user.id,
         notes: notes?.trim() || null,
         attachments: attachment
           ? {

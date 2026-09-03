@@ -57,6 +57,7 @@ model Contributor {
 
 model Deposit {
   id               String       @id @default(cuid())
+  festival         String       @default("Ganesh Festival")
   contributorId    String
   contributor      Contributor  @relation(fields: [contributorId], references: [id], onDelete: Cascade)
   donorName        String?      // Compulsory manual donor name
@@ -75,6 +76,7 @@ model Deposit {
 
 model Donation {
   id               String       @id @default(cuid())
+  festival         String       @default("Ganesh Festival")
   contributorId    String
   contributor      Contributor  @relation(fields: [contributorId], references: [id], onDelete: Cascade)
   donorName        String?      // Compulsory manual donor name
@@ -97,6 +99,7 @@ model Donation {
 
 model Expense {
   id              String       @id @default(cuid())
+  festival        String       @default("Ganesh Festival")
   expenseCategory String       // "Food", "Decorations", "Sound System", "Venue", "Printing", "Transportation", "Materials", "Entertainment", "Utilities", "Volunteer/Staff", "Miscellaneous", "Other"
   description     String
   amount          Float

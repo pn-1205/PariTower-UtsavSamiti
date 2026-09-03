@@ -4,6 +4,10 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Calculate 2 months ago threshold
+    const twoMonthsAgo = new Date();
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
     // Execute all independent database queries in parallel for ultra-low latency
     const [
       depositAggregate,
@@ -73,32 +77,38 @@ export async function GET() {
       prisma.contributor.count({
         where: { contributorType: 'other' },
       }),
-      // 11. Recent deposits
+      // 11. Deposits in last 2 months
       prisma.deposit.findMany({
-        where: { deletedAt: null },
+        where: {
+          deletedAt: null,
+          receivedDate: { gte: twoMonthsAgo },
+        },
         orderBy: { receivedDate: 'desc' },
-        take: 8,
         include: {
           contributor: true,
           receivedByUser: { select: { id: true, name: true, username: true } },
           attachments: true,
         },
       }),
-      // 12. Recent expenses
+      // 12. Expenses in last 2 months
       prisma.expense.findMany({
-        where: { deletedAt: null },
+        where: {
+          deletedAt: null,
+          expenseDate: { gte: twoMonthsAgo },
+        },
         orderBy: { expenseDate: 'desc' },
-        take: 8,
         include: {
           enteredByUser: { select: { id: true, name: true, username: true } },
           attachments: true,
         },
       }),
-      // 13. Recent donations
+      // 13. Donations in last 2 months
       prisma.donation.findMany({
-        where: { deletedAt: null },
+        where: {
+          deletedAt: null,
+          donationDate: { gte: twoMonthsAgo },
+        },
         orderBy: { donationDate: 'desc' },
-        take: 8,
         include: {
           contributor: true,
           receivedByUser: { select: { id: true, name: true, username: true } },
@@ -114,12 +124,12 @@ export async function GET() {
     const receivedFromFlats = flatDepositsAggregate._sum.amount || 0;
     const receivedFromOther = otherDepositsAggregate._sum.amount || 0;
 
-    const expensesByCategory = expenseCategoriesRaw.map((e) => ({
-      category: e.expenseCategory,
-      amount: e._sum.amount || 0,
+    const expensesByCategory = expenseCategoriesRaw.map((item) => ({
+      category: item.expenseCategory,
+      total: item._sum.amount || 0,
     }));
 
-    // Merge recent activity
+    // Merge all activities from last 2 months
     const activityList: any[] = [];
 
     recentDeposits.forEach((dep) => {
@@ -127,6 +137,7 @@ export async function GET() {
         id: `dep-${dep.id}`,
         type: 'deposit',
         date: dep.receivedDate,
+        festival: dep.festival || 'Ganesh Festival',
         title: dep.donorName
           ? `${dep.donorName} (${dep.contributor.name})`
           : dep.contributor.name,
@@ -142,6 +153,7 @@ export async function GET() {
         id: `exp-${exp.id}`,
         type: 'expense',
         date: exp.expenseDate,
+        festival: exp.festival || 'Ganesh Festival',
         title: exp.paidTo,
         amount: -exp.amount,
         details: `${exp.expenseCategory} • ${exp.paymentMethod} • By ${exp.enteredByUser.name}`,
@@ -155,6 +167,7 @@ export async function GET() {
         id: `don-${don.id}`,
         type: 'donation',
         date: don.donationDate,
+        festival: don.festival || 'Ganesh Festival',
         title: `${don.quantity} ${don.unit} ${don.itemName}`,
         amount: null,
         details: `${don.donationType} • From ${don.donorName || don.contributor.name}`,
@@ -164,7 +177,7 @@ export async function GET() {
     });
 
     activityList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    const recentActivity = activityList.slice(0, 10);
+    const recentActivity = activityList;
 
     return NextResponse.json(
       {

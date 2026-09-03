@@ -37,6 +37,8 @@ interface AuthContextType {
   setAddExpenseModalOpen: (open: boolean) => void;
   addDonationModalOpen: boolean;
   setAddDonationModalOpen: (open: boolean) => void;
+  transferFundModalOpen: boolean;
+  setTransferFundModalOpen: (open: boolean) => void;
   lightboxAttachment: AttachmentItem | null;
   setLightboxAttachment: (att: AttachmentItem | null) => void;
   
@@ -54,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [addDepositModalOpen, setAddDepositModalOpen] = useState(false);
   const [addExpenseModalOpen, setAddExpenseModalOpen] = useState(false);
   const [addDonationModalOpen, setAddDonationModalOpen] = useState(false);
+  const [transferFundModalOpen, setTransferFundModalOpen] = useState(false);
   const [lightboxAttachment, setLightboxAttachment] = useState<AttachmentItem | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -135,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAddExpenseModalOpen,
         addDonationModalOpen,
         setAddDonationModalOpen,
+        transferFundModalOpen,
+        setTransferFundModalOpen,
         lightboxAttachment,
         setLightboxAttachment,
         refreshTrigger,

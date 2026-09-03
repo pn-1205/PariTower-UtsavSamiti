@@ -1,18 +1,41 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getFyDateRange } from '@/lib/festivalUtils';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const typeParam = searchParams.get('type'); // 'all', 'income', 'expense', 'donation'
     const searchParam = searchParams.get('search');
+    const festivalParam = searchParams.get('festival');
+    const fyParam = searchParams.get('fy');
+
+    // Build common filters
+    const depositWhere: any = { deletedAt: null };
+    const expenseWhere: any = { deletedAt: null };
+    const donationWhere: any = { deletedAt: null };
+
+    if (festivalParam && festivalParam !== 'all') {
+      depositWhere.festival = festivalParam;
+      expenseWhere.festival = festivalParam;
+      donationWhere.festival = festivalParam;
+    }
+
+    if (fyParam && fyParam !== 'all') {
+      const { start, end } = getFyDateRange(fyParam);
+      if (start && end) {
+        depositWhere.receivedDate = { gte: start, lte: end };
+        expenseWhere.expenseDate = { gte: start, lte: end };
+        donationWhere.donationDate = { gte: start, lte: end };
+      }
+    }
 
     const [deposits, expenses, donations] = await Promise.all([
       typeParam === 'expense' || typeParam === 'donation'
         ? []
         : prisma.deposit.findMany({
-            where: { deletedAt: null },
+            where: depositWhere,
             orderBy: { receivedDate: 'desc' },
             include: {
               contributor: {
@@ -27,7 +50,7 @@ export async function GET(request: Request) {
       typeParam === 'income' || typeParam === 'donation'
         ? []
         : prisma.expense.findMany({
-            where: { deletedAt: null },
+            where: expenseWhere,
             orderBy: { expenseDate: 'desc' },
             include: {
               enteredByUser: { select: { id: true, name: true } },
@@ -37,7 +60,7 @@ export async function GET(request: Request) {
       typeParam === 'income' || typeParam === 'expense'
         ? []
         : prisma.donation.findMany({
-            where: { deletedAt: null },
+            where: donationWhere,
             orderBy: { donationDate: 'desc' },
             include: {
               contributor: {
@@ -64,10 +87,11 @@ export async function GET(request: Request) {
         return {
           id: d.id,
           kind: 'deposit',
+          festival: d.festival || 'Ganesh Festival',
           date: d.receivedDate,
           title: d.donorName ? `Donor: ${d.donorName}` : d.contributor.name,
           party: displayParty,
-          category: d.contributor.contributorType === 'flat' ? 'Flat Contribution' : 'External Contributor',
+          category: d.paymentMethod === 'Internal Transfer' ? 'Internal Transfer' : (d.contributor.contributorType === 'flat' ? 'Flat Contribution' : 'External Contributor'),
           amount: d.amount,
           paymentMethod: d.paymentMethod,
           user: d.receivedByUser.name,
@@ -78,6 +102,7 @@ export async function GET(request: Request) {
       ...expenses.map((e) => ({
         id: e.id,
         kind: 'expense',
+        festival: e.festival || 'Ganesh Festival',
         date: e.expenseDate,
         title: e.description,
         party: e.paidTo,
@@ -100,6 +125,7 @@ export async function GET(request: Request) {
         return {
           id: dn.id,
           kind: 'donation',
+          festival: dn.festival || 'Ganesh Festival',
           date: dn.donationDate,
           title: `${dn.quantity} ${dn.unit} ${dn.itemName}`,
           party: displayParty,
@@ -114,23 +140,45 @@ export async function GET(request: Request) {
       }),
     ];
 
+    // Client-side text search if provided
     if (searchParam) {
-      const q = searchParam.trim().toLowerCase();
-      list = list.filter((item) =>
-        item.title?.toLowerCase().includes(q) ||
-        item.party?.toLowerCase().includes(q) ||
-        item.category?.toLowerCase().includes(q) ||
-        item.user?.toLowerCase().includes(q) ||
-        item.paymentMethod?.toLowerCase().includes(q) ||
-        item.notes?.toLowerCase().includes(q)
+      const q = searchParam.toLowerCase();
+      list = list.filter(
+        (t) =>
+          t.title?.toLowerCase().includes(q) ||
+          t.party?.toLowerCase().includes(q) ||
+          t.category?.toLowerCase().includes(q) ||
+          t.notes?.toLowerCase().includes(q) ||
+          t.user?.toLowerCase().includes(q) ||
+          t.festival?.toLowerCase().includes(q)
       );
     }
 
+    // Sort chronologically descending
     list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    return NextResponse.json({ transactions: list });
+    // Calculate totals for filtered ledger
+    const totalIncome = list
+      .filter((t) => t.kind === 'deposit')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalExpense = list
+      .filter((t) => t.kind === 'expense')
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    const netBalance = totalIncome - totalExpense;
+
+    return NextResponse.json({
+      transactions: list,
+      totals: {
+        totalIncome,
+        totalExpense,
+        netBalance,
+        count: list.length,
+      },
+    });
   } catch (error: any) {
-    console.error('Transactions API error:', error);
-    return NextResponse.json({ error: 'Failed to fetch ledger.' }, { status: 500 });
+    console.error('Transactions GET error:', error);
+    return NextResponse.json({ error: 'Failed to fetch ledger transactions.' }, { status: 500 });
   }
 }

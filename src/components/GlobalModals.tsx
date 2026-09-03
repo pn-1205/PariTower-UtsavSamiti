@@ -5,6 +5,7 @@ import LoginModal from './LoginModal';
 import AddDepositModal from './AddDepositModal';
 import AddExpenseModal from './AddExpenseModal';
 import AddDonationModal from './AddDonationModal';
+import TransferFundModal from './TransferFundModal';
 import LightboxModal from './LightboxModal';
 
 export default function GlobalModals() {
@@ -14,6 +15,7 @@ export default function GlobalModals() {
       <AddDepositModal />
       <AddExpenseModal />
       <AddDonationModal />
+      <TransferFundModal />
       <LightboxModal />
     </>
   );

@@ -6,6 +6,7 @@ import { formatDate, formatCurrency } from './utils';
 export interface LedgerItem {
   id: string;
   kind: 'deposit' | 'expense' | 'donation';
+  festival?: string;
   date: string | Date;
   title: string;
   party: string;
@@ -16,20 +17,23 @@ export interface LedgerItem {
   notes?: string;
 }
 
-export function getLedgerFilename(extension: 'xlsx' | 'pdf' | 'csv'): string {
+export function getLedgerFilename(extension: 'xlsx' | 'pdf' | 'csv', options?: { festival?: string; fy?: string }): string {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const month = months[now.getMonth()];
   const year = now.getFullYear();
-  return `Ledger_as_on_${day}_${month}_${year}.${extension}`;
+  const festPrefix = options?.festival && options.festival !== 'all' ? `${options.festival.replace(/\s+/g, '_')}_` : '';
+  const fySuffix = options?.fy && options.fy !== 'all' ? `_FY_${options.fy}` : '';
+  return `${festPrefix}Ledger${fySuffix}_as_on_${day}_${month}_${year}.${extension}`;
 }
 
-export function exportLedgerToCsv(transactions: LedgerItem[]) {
-  const filename = getLedgerFilename('csv');
+export function exportLedgerToCsv(transactions: LedgerItem[], options?: { festival?: string; fy?: string }) {
+  const filename = getLedgerFilename('csv', options);
   const headers = [
     'Sr. No.',
     'Date',
+    'Festival',
     'Transaction Type',
     'Party / Donor',
     'Category',
@@ -43,6 +47,7 @@ export function exportLedgerToCsv(transactions: LedgerItem[]) {
   const rows = transactions.map((t, idx) => [
     idx + 1,
     formatDate(t.date),
+    `"${(t.festival || 'Ganesh Festival').replace(/"/g, '""')}"`,
     t.kind === 'deposit' ? 'INCOME (+)' : t.kind === 'expense' ? 'EXPENSE (-)' : 'IN-KIND DONATION',
     `"${(t.party || '').replace(/"/g, '""')}"`,
     `"${(t.category || '').replace(/"/g, '""')}"`,
@@ -67,9 +72,10 @@ export function exportLedgerToCsv(transactions: LedgerItem[]) {
 
 export function exportLedgerToExcel(
   transactions: LedgerItem[],
-  summary?: { totalReceived: number; totalExpenses: number; currentBalance: number }
+  summary?: { totalReceived: number; totalExpenses: number; currentBalance: number },
+  options?: { festival?: string; fy?: string }
 ) {
-  const filename = getLedgerFilename('xlsx');
+  const filename = getLedgerFilename('xlsx', options);
   const nowStr = new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -80,10 +86,15 @@ export function exportLedgerToExcel(
   const totExp = summary ? summary.totalExpenses : transactions.filter(t => t.kind === 'expense').reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const bal = summary ? summary.currentBalance : (totRec - totExp);
 
+  const mainTitle = options?.festival && options.festival !== 'all' 
+    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}` 
+    : 'PARI TOWER UTSAV SAMITI (PTUS)';
+  const subTitle = `OFFICIAL GENERAL LEDGER ${options?.fy && options.fy !== 'all' ? `(FY ${options.fy})` : ''} — AS ON ${nowStr.toUpperCase()}`;
+
   // Build Sheet Data
   const sheetData: any[][] = [
-    ['PARI TOWER UTSAV SAMITI (PTUS)'],
-    [`OFFICIAL FINANCIAL GENERAL LEDGER — AS ON ${nowStr.toUpperCase()}`],
+    [mainTitle],
+    [subTitle],
     [''],
     ['FINANCIAL SUMMARY STATEMENT'],
     ['Total Money Received (INR)', totRec],
@@ -93,6 +104,7 @@ export function exportLedgerToExcel(
     [
       'Sr. No.',
       'Date',
+      'Festival',
       'Transaction Type',
       'Donor / Party Name',
       'Category',
@@ -111,6 +123,7 @@ export function exportLedgerToExcel(
     sheetData.push([
       idx + 1,
       formatDate(t.date),
+      t.festival || 'Ganesh Festival',
       isDeposit ? 'INCOME (+)' : isExpense ? 'EXPENSE (-)' : 'IN-KIND DONATION',
       t.party,
       t.category,
@@ -130,6 +143,7 @@ export function exportLedgerToExcel(
     '',
     '',
     '',
+    '',
     totRec,
     totExp,
     `NET BALANCE: ${bal}`,
@@ -143,6 +157,7 @@ export function exportLedgerToExcel(
   ws['!cols'] = [
     { wch: 8 },  // Sr No
     { wch: 14 }, // Date
+    { wch: 20 }, // Festival
     { wch: 18 }, // Type
     { wch: 30 }, // Party / Donor
     { wch: 22 }, // Category
@@ -161,9 +176,10 @@ export function exportLedgerToExcel(
 
 export function exportLedgerToPdf(
   transactions: LedgerItem[],
-  summary?: { totalReceived: number; totalExpenses: number; currentBalance: number }
+  summary?: { totalReceived: number; totalExpenses: number; currentBalance: number },
+  options?: { festival?: string; fy?: string }
 ) {
-  const filename = getLedgerFilename('pdf');
+  const filename = getLedgerFilename('pdf', options);
   const nowStr = new Date().toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -180,18 +196,22 @@ export function exportLedgerToPdf(
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // 1. Top Decorative Brand Bar
-  doc.setFillColor(234, 88, 12); // Deep saffron/orange #ea580c
+  // 1. Top Decorative Brand Bar (Sacred Deep Maroon)
+  doc.setFillColor(136, 19, 55); // Deep Maroon #881337
   doc.rect(0, 0, pageWidth, 52, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('PARI TOWER UTSAV SAMITI (PTUS)', 24, 26);
+  doc.setFontSize(16);
+  const titleText = options?.festival && options.festival !== 'all' 
+    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}` 
+    : 'PARI TOWER UTSAV SAMITI (PTUS)';
+  doc.text(titleText, 24, 26);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('Official Financial General Ledger', 24, 42);
+  const subTitleText = `Official Financial General Ledger ${options?.fy && options.fy !== 'all' ? `(FY ${options.fy})` : ''}`;
+  doc.text(subTitleText, 24, 42);
 
   const asOnText = `Ledger As On: ${nowStr}`;
   const asOnWidth = doc.getTextWidth(asOnText);
@@ -227,7 +247,7 @@ export function exportLedgerToPdf(
 
   // Net Balance Card
   const balCardX = expCardX + cardWidth + 12;
-  doc.setFillColor(255, 247, 237); // light orange #fff7ed
+  doc.setFillColor(255, 247, 237); // light amber
   doc.setDrawColor(254, 215, 170);
   doc.roundedRect(balCardX, cardY, cardWidth, cardHeight, 6, 6, 'FD');
   doc.setTextColor(154, 52, 18);
@@ -251,6 +271,7 @@ export function exportLedgerToPdf(
     return [
       String(index + 1),
       formatDate(t.date),
+      t.festival || 'Ganesh Festival',
       typeLabel,
       t.party || '-',
       t.category || '-',
@@ -267,6 +288,7 @@ export function exportLedgerToPdf(
     head: [[
       '#',
       'Date',
+      'Festival',
       'Type',
       'Donor / Party',
       'Category',
@@ -278,7 +300,7 @@ export function exportLedgerToPdf(
     body: tableRows,
     theme: 'striped',
     headStyles: {
-      fillColor: [234, 88, 12],
+      fillColor: [136, 19, 55], // Sacred Maroon #881337
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
@@ -290,15 +312,16 @@ export function exportLedgerToPdf(
       overflow: 'linebreak',
     },
     columnStyles: {
-      0: { cellWidth: 20 },
-      1: { cellWidth: 50 },
-      2: { cellWidth: 60, fontStyle: 'bold' },
-      3: { cellWidth: 140, fontStyle: 'bold' },
-      4: { cellWidth: 90 },
-      5: { cellWidth: 75, halign: 'right', fontStyle: 'bold' },
-      6: { cellWidth: 65 },
-      7: { cellWidth: 80 },
-      8: { cellWidth: 'auto' },
+      0: { cellWidth: 18 },
+      1: { cellWidth: 46 },
+      2: { cellWidth: 70 },
+      3: { cellWidth: 55, fontStyle: 'bold' },
+      4: { cellWidth: 120, fontStyle: 'bold' },
+      5: { cellWidth: 80 },
+      6: { cellWidth: 70, halign: 'right', fontStyle: 'bold' },
+      7: { cellWidth: 60 },
+      8: { cellWidth: 70 },
+      9: { cellWidth: 'auto' },
     },
     didParseCell: (data) => {
       if (data.section === 'body') {
