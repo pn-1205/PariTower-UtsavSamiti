@@ -6,8 +6,22 @@ import BottomNav from '@/components/BottomNav';
 import GlobalModals from '@/components/GlobalModals';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://pt-utsav-samiti.vercel.app'),
   title: 'Pari Tower Festival Committee',
-  description: 'Community Festival Financial Tracking Application for Pari Tower',
+  description: 'Live financial accounts, collections, expenses & transparent general ledger for Pari Tower community.',
+  openGraph: {
+    title: 'Pari Tower Festival Committee (PTFC)',
+    description: 'Live financial accounts, collections, expenses & transparent general ledger for Pari Tower community.',
+    url: 'https://pt-utsav-samiti.vercel.app',
+    siteName: 'PTFC Accounts',
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Pari Tower Festival Committee (PTFC)',
+    description: 'Live financial accounts, collections, expenses & transparent general ledger for Pari Tower community.',
+  },
   icons: {
     icon: '/favicon.ico',
   },
