@@ -46,11 +46,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-[#fafbfc] text-stone-900 antialiased flex flex-col selection:bg-amber-600 selection:text-white">
+    <html lang="en" className="overflow-x-hidden max-w-[100vw]">
+      <body className="min-h-screen bg-[#fafbfc] text-stone-900 antialiased flex flex-col selection:bg-amber-600 selection:text-white overflow-x-hidden max-w-[100vw] w-full">
         <AuthProvider>
           <Navbar />
-          <main className="flex-1 pb-6">
+          <main className="flex-1 pb-6 w-full max-w-[100vw] overflow-x-hidden">
             {children}
           </main>
           <footer className="w-full py-4 px-4 text-center text-xs text-stone-500 border-t border-stone-200/60 pb-20 md:pb-6">

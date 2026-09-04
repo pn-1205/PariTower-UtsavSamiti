@@ -42,36 +42,36 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4 w-full">
           {/* Brand Logo & Title */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0 group min-w-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 group mr-1">
             <img
               src="/logo.png"
               alt="Pari Tower Utsav Samiti"
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover shrink-0"
             />
-            <div className="min-w-0">
-              <span className="font-bold text-gray-900 text-sm sm:text-base md:text-lg tracking-tight truncate block max-w-[140px] xs:max-w-[200px] sm:max-w-none">
+            <div className="min-w-0 flex-1">
+              <span className="font-bold text-gray-900 text-xs sm:text-base md:text-lg tracking-tight truncate block">
                 Pari Tower Utsav Samiti
               </span>
             </div>
           </Link>
 
           {/* Right Action: Auth & Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Donate Quick Action Button */}
             <Link
               href="/donate"
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95 shrink-0"
             >
               <Heart className="w-3.5 h-3.5 fill-white shrink-0" />
               <span>Donate</span>
             </Link>
 
             {isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Add Actions Desktop Buttons */}
                 <div className="hidden sm:flex items-center gap-1.5">
                   {isAdmin && (
@@ -108,7 +108,7 @@ export default function Navbar() {
                 </div>
 
                 {/* User Info Badge */}
-                <div className="flex items-center gap-2 pl-2 border-l border-gray-200">
+                <div className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 border-l border-gray-200">
                   <div className="text-right hidden sm:block">
                     <div className="text-xs font-semibold text-gray-900 leading-none">
                       {user?.name}
@@ -120,7 +120,7 @@ export default function Navbar() {
                   <button
                     onClick={logout}
                     title="Logout"
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-1.5 sm:p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -129,19 +129,20 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold bg-stone-900 hover:bg-black text-white rounded-xl shadow-2xs transition-all active:scale-95"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-stone-900 hover:bg-black text-white rounded-xl shadow-2xs transition-all active:scale-95 shrink-0"
               >
                 <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="hidden xs:inline">Admin Login</span>
-                <span className="xs:hidden">Login</span>
+                <span>Admin Login</span>
               </button>
             )}
 
+            {/* Mobile Menu Button: ALWAYS positioned firmly on the right of the screen */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+              className="md:hidden p-1.5 sm:p-2 text-stone-700 hover:text-stone-900 rounded-xl hover:bg-stone-100 shrink-0 transition-colors"
+              aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-6 h-6 text-stone-900" /> : <Menu className="w-6 h-6 text-stone-900" />}
             </button>
           </div>
         </div>
@@ -224,6 +225,21 @@ export default function Navbar() {
               <CreditCard className="w-4 h-4 text-stone-600" />
               Manage Receiving Accounts
             </button>
+          )}
+
+          {!isAuthenticated && (
+            <div className="pt-2 border-t border-stone-100">
+              <button
+                onClick={() => {
+                  setLoginModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-stone-900 hover:bg-black text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Admin & Committee Login</span>
+              </button>
+            </div>
           )}
         </div>
       )}
