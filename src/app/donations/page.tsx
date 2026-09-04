@@ -246,7 +246,8 @@ export default function DonationsPage() {
                         onClick={() => setLightboxAttachment(d.attachments[0])}
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
                       >
-                        <Paperclip className="w-3.5 h-3.5" /> View Attachment Attachment</button>
+                        <Paperclip className="w-3.5 h-3.5" /> View Attachment
+                      </button>
                     )}
 
                     {isAuthenticated && (

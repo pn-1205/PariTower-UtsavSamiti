@@ -46,28 +46,28 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand Logo & Title */}
-          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0 group min-w-0">
             <img
               src="/logo.png"
               alt="Pari Tower Utsav Samiti"
-              className="w-10 h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform object-cover shrink-0"
             />
-            <div>
-              <span className="font-bold text-gray-900 text-base sm:text-lg tracking-tight">
+            <div className="min-w-0">
+              <span className="font-bold text-gray-900 text-sm sm:text-base md:text-lg tracking-tight truncate block max-w-[140px] xs:max-w-[200px] sm:max-w-none">
                 Pari Tower Utsav Samiti
               </span>
             </div>
           </Link>
 
           {/* Right Action: Auth & Quick Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Donate Quick Action Button */}
             <Link
               href="/donate"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95"
             >
-              <Heart className="w-3.5 h-3.5 fill-white" />
-              Donate
+              <Heart className="w-3.5 h-3.5 fill-white shrink-0" />
+              <span>Donate</span>
             </Link>
 
             {isAuthenticated ? (
@@ -129,10 +129,11 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-stone-900 hover:bg-black text-white rounded-xl shadow-2xs transition-all active:scale-95"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-bold bg-stone-900 hover:bg-black text-white rounded-xl shadow-2xs transition-all active:scale-95"
               >
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                Admin Login
+                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden xs:inline">Admin Login</span>
+                <span className="xs:hidden">Login</span>
               </button>
             )}
 

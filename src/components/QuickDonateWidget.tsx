@@ -275,7 +275,7 @@ export default function QuickDonateWidget() {
   return (
     <div
       id="donate-section"
-      className="bg-white rounded-3xl shadow-sm hover:shadow-md transition-all p-5 sm:p-7 border border-stone-200/90 relative overflow-hidden ring-1 ring-stone-900/5"
+      className="bg-white rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md transition-all p-3.5 sm:p-6 md:p-7 border border-stone-200/90 relative overflow-hidden ring-1 ring-stone-900/5"
     >
       {/* Magic UI Border Beam animated aura with subtle festive amber/gold */}
       <BorderBeam size={280} duration={14} borderWidth={1.5} colorFrom="#f59e0b" colorTo="#d97706" />
@@ -285,22 +285,22 @@ export default function QuickDonateWidget() {
       <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-stone-500/[0.03] rounded-full blur-3xl pointer-events-none" />
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 sm:pb-4 border-b border-stone-100 relative z-10">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] font-extrabold uppercase tracking-wider mb-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-            Pari Tower Festival Contribution
+          <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/80 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider mb-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse shrink-0" />
+            <span>Pari Tower Festival Contribution</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 flex items-center gap-2">
+          <h2 className="text-lg sm:text-2xl font-black tracking-tight text-stone-900 flex items-center gap-2">
             Online Contribution via UPI
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-stone-500 mt-0.5 leading-relaxed">
             Direct bank-to-bank contribution • 0% gateway commission • Verified by Samiti
           </p>
         </div>
 
         {/* Receiver Account Badge */}
-        <div className="bg-stone-50 border border-stone-200/90 px-3.5 py-2 rounded-2xl text-xs shadow-2xs">
+        <div className="bg-stone-50 border border-stone-200/90 px-3.5 py-2 rounded-2xl text-xs shadow-2xs w-full sm:w-auto shrink-0">
           <div className="flex items-center justify-between gap-2 mb-0.5">
             <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
               Receiving Custodian:
@@ -310,10 +310,10 @@ export default function QuickDonateWidget() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           </div>
-          <span className="font-extrabold text-stone-900 text-sm block">
+          <span className="font-extrabold text-stone-900 text-sm block truncate">
             {activeAccount.name}
           </span>
-          <span className="text-[11px] text-amber-700 block font-mono font-bold">
+          <span className="text-[11px] text-amber-700 block font-mono font-bold truncate">
             {activeAccount.upiId || 'Direct UPI'}
           </span>
         </div>
@@ -335,7 +335,7 @@ export default function QuickDonateWidget() {
           </div>
 
           {/* Receipt Info Card */}
-          <div className="bg-stone-50 border border-stone-200/90 max-w-sm mx-auto p-4 rounded-2xl text-left text-xs space-y-2 font-mono text-stone-700 shadow-xs">
+          <div className="bg-stone-50 border border-stone-200/90 w-full max-w-sm mx-auto p-3.5 sm:p-4 rounded-2xl text-left text-xs space-y-2 font-mono text-stone-700 shadow-xs">
             <div className="flex justify-between pb-1.5 border-b border-stone-200">
               <span className="text-stone-500">Reference No:</span>
               <span className="font-bold text-stone-900">{successReceipt.receiptNo || 'PTR-' + Math.floor(100000 + Math.random() * 900000)}</span>
@@ -501,9 +501,9 @@ export default function QuickDonateWidget() {
           </div>
 
           {/* Row 2: Donor Type, Flat & Donor Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-stone-50/80 p-3.5 rounded-2xl border border-stone-200/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 sm:gap-3 bg-stone-50/80 p-3 sm:p-3.5 rounded-2xl border border-stone-200/80">
             {/* Donor Type */}
-            <div className="sm:col-span-3">
+            <div className={donorType === 'flat' ? 'sm:col-span-1 lg:col-span-3' : 'sm:col-span-1 lg:col-span-4'}>
               <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 Contributor Type
               </label>
@@ -537,7 +537,7 @@ export default function QuickDonateWidget() {
 
             {/* Flat Selection (if Resident) */}
             {donorType === 'flat' && (
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-1 lg:col-span-3">
                 <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                   Flat Number *
                 </label>
@@ -553,7 +553,7 @@ export default function QuickDonateWidget() {
             )}
 
             {/* Donor Full Name */}
-            <div className={donorType === 'flat' ? 'sm:col-span-3' : 'sm:col-span-5'}>
+            <div className={donorType === 'flat' ? 'sm:col-span-1 lg:col-span-3' : 'sm:col-span-1 lg:col-span-4'}>
               <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 Donor Full Name *
               </label>
@@ -568,7 +568,7 @@ export default function QuickDonateWidget() {
             </div>
 
             {/* WhatsApp / Phone */}
-            <div className={donorType === 'flat' ? 'sm:col-span-3' : 'sm:col-span-4'}>
+            <div className={donorType === 'flat' ? 'sm:col-span-1 lg:col-span-3' : 'sm:col-span-2 lg:col-span-4'}>
               <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 WhatsApp Phone (Optional)
               </label>
@@ -587,7 +587,7 @@ export default function QuickDonateWidget() {
             <label className="block text-[11px] font-extrabold text-stone-700 uppercase tracking-wider mb-1.5">
               Select Amount (INR) *
             </label>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               {PRESET_AMOUNTS.map((preset) => (
                 <button
                   key={preset}
@@ -596,7 +596,7 @@ export default function QuickDonateWidget() {
                     setAmount(preset);
                     setCustomAmount('');
                   }}
-                  className={`text-xs font-black px-4 py-2 rounded-xl transition-all ${
+                  className={`text-xs font-black px-3.5 sm:px-4 py-2 rounded-xl transition-all ${
                     amount === preset
                       ? 'bg-stone-900 text-white shadow-xs scale-105 ring-2 ring-stone-900/10'
                       : 'bg-stone-100 hover:bg-stone-200/80 text-stone-800 border border-stone-200/80'
@@ -619,15 +619,16 @@ export default function QuickDonateWidget() {
               </button>
 
               {amount === 'custom' && (
-                <div className="relative flex-1 min-w-[120px]">
-                  <span className="absolute left-3 top-2 text-xs font-bold text-stone-500">₹</span>
+                <div className="relative w-full sm:w-auto sm:flex-1 min-w-[140px] mt-1 sm:mt-0">
+                  <span className="absolute left-3 top-2.5 text-xs font-bold text-stone-500">₹</span>
                   <input
                     type="number"
                     min="1"
-                    placeholder="Enter amount"
+                    placeholder="Enter custom amount"
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full pl-7 pr-3 py-1.5 text-xs font-black bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    autoFocus
+                    className="w-full pl-7 pr-3 py-2 text-xs font-black bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 shadow-2xs"
                   />
                 </div>
               )}
@@ -641,25 +642,35 @@ export default function QuickDonateWidget() {
               type="button"
               onClick={handlePayClick}
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2.5 py-4 px-5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-sm sm:text-base rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 sm:gap-2.5 py-3.5 sm:py-4 px-4 sm:px-5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-[0.99] disabled:opacity-60 cursor-pointer"
             >
               <Smartphone className="w-5 h-5 shrink-0" />
-              <span>
-                {submitting ? 'Recording...' : `Pay ${formatCurrency(finalAmount)} via UPI (Google Pay, PhonePe, Paytm, etc.)`}
-              </span>
+              <div className="text-center min-w-0">
+                <div className="text-sm sm:text-base font-black tracking-tight truncate">
+                  <span className="sm:hidden">
+                    {submitting ? 'Recording...' : `Pay ${formatCurrency(finalAmount)} via UPI App`}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {submitting ? 'Recording...' : `Pay ${formatCurrency(finalAmount)} via UPI (Google Pay, PhonePe, Paytm, etc.)`}
+                  </span>
+                </div>
+                <div className="text-[10px] sm:text-[11px] font-semibold text-amber-100/90 block sm:hidden">
+                  Opens GPay • PhonePe • Paytm • Any UPI App
+                </div>
+              </div>
               <ArrowRight className="w-4 h-4 shrink-0" />
             </button>
 
             {/* Dynamic QR Code & 1-Click Copy Section */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80">
-              <div className="space-y-2 flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3.5 sm:p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80">
+              <div className="space-y-2 flex-1 min-w-0 w-full">
                 <div className="flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-amber-600" />
+                  <QrCode className="w-4 h-4 text-amber-600 shrink-0" />
                   <span className="text-xs font-bold text-stone-900 uppercase tracking-wider">
                     Scan QR Code with any UPI App
                   </span>
                 </div>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[11px] text-stone-500 leading-relaxed">
                   Using a computer or another phone? Scan with Google Pay, PhonePe, or Paytm, or copy the UPI ID below.
                 </p>
                 <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-stone-200 text-xs w-full max-w-sm">
@@ -676,17 +687,31 @@ export default function QuickDonateWidget() {
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                 </div>
+
+                {/* Mobile Toggle Button for QR Code */}
+                <button
+                  type="button"
+                  onClick={() => setShowQrOnMobile(!showQrOnMobile)}
+                  className="sm:hidden w-full py-2 px-3 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/90 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-amber-700" />
+                  <span>{showQrOnMobile ? 'Hide QR Code' : 'Show QR Code to Scan'}</span>
+                </button>
               </div>
 
-              {/* QR Code */}
-              <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl shadow-2xs border border-stone-200 shrink-0">
+              {/* QR Code Container */}
+              <div
+                className={`flex flex-col items-center justify-center p-3 bg-white rounded-2xl shadow-2xs border border-stone-200 shrink-0 ${
+                  showQrOnMobile ? 'flex' : 'hidden sm:flex'
+                }`}
+              >
                 <QRCodeSVG
                   value={universalUpiUri}
                   size={120}
                   level="M"
                   includeMargin={false}
                 />
-                <span className="text-[10px] font-extrabold text-stone-600 mt-2 uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold text-stone-600 mt-2 uppercase tracking-wider text-center">
                   Scan to Pay {formatCurrency(finalAmount)}
                 </span>
               </div>

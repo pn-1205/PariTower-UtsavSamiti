@@ -41,7 +41,7 @@ export default function BottomNav() {
       )}
 
       {/* Bottom Nav Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-stone-200 h-14 flex items-center justify-around px-2 shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-stone-200 h-14 pb-[env(safe-area-inset-bottom,0px)] flex items-center justify-around px-1.5 shadow-lg">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;

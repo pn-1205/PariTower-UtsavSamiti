@@ -164,71 +164,73 @@ export default function UserManagementPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
-              <tr>
-                <th className="px-5 py-3.5">Name</th>
-                <th className="px-5 py-3.5">Username</th>
-                <th className="px-5 py-3.5">Role</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Activity Stats</th>
-                <th className="px-5 py-3.5">Last Login</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {usersList.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50/60">
-                  <td className="px-5 py-3.5 font-bold text-gray-900">{u.name}</td>
-                  <td className="px-5 py-3.5 text-xs text-gray-600 font-mono">@{u.username}</td>
-                  <td className="px-5 py-3.5">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                        u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {u.role === 'ADMIN' ? 'Administrator' : 'Entry User'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span
-                      className={`inline-block px-2 py-0.5 text-[11px] font-bold rounded-full ${
-                        u.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
-                      }`}
-                    >
-                      {u.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-xs text-gray-500">
-                    {u._count?.depositsReceived || 0} deposits • {u._count?.expensesEntered || 0} expenses
-                  </td>
-                  <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                    {u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Never'}
-                  </td>
-                  <td className="px-5 py-3.5 text-right whitespace-nowrap space-x-2">
-                    <button
-                      onClick={() => setResetModalUser(u)}
-                      className="p-1.5 text-gray-400 hover:text-rose-900 rounded-lg hover:bg-rose-50"
-                      title="Reset Password"
-                    >
-                      <KeyRound className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleToggleActive(u)}
-                      className={`p-1.5 rounded-lg ${
-                        u.isActive
-                          ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-                          : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
-                      }`}
-                      title={u.isActive ? 'Deactivate user' : 'Activate user'}
-                    >
-                      {u.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
+                <tr>
+                  <th className="px-5 py-3.5">Name</th>
+                  <th className="px-5 py-3.5">Username</th>
+                  <th className="px-5 py-3.5">Role</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Activity Stats</th>
+                  <th className="px-5 py-3.5">Last Login</th>
+                  <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {usersList.map((u) => (
+                  <tr key={u.id} className="hover:bg-gray-50/60">
+                    <td className="px-5 py-3.5 font-bold text-gray-900">{u.name}</td>
+                    <td className="px-5 py-3.5 text-xs text-gray-600 font-mono">@{u.username}</td>
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {u.role === 'ADMIN' ? 'Administrator' : 'Entry User'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span
+                        className={`inline-block px-2 py-0.5 text-[11px] font-bold rounded-full ${
+                          u.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {u.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-xs text-gray-500">
+                      {u._count?.depositsReceived || 0} deposits • {u._count?.expensesEntered || 0} expenses
+                    </td>
+                    <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                      {u.lastLoginAt ? formatDateTime(u.lastLoginAt) : 'Never'}
+                    </td>
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap space-x-2">
+                      <button
+                        onClick={() => setResetModalUser(u)}
+                        className="p-1.5 text-gray-400 hover:text-rose-900 rounded-lg hover:bg-rose-50"
+                        title="Reset Password"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(u)}
+                        className={`p-1.5 rounded-lg ${
+                          u.isActive
+                            ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                            : 'text-gray-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={u.isActive ? 'Deactivate user' : 'Activate user'}
+                      >
+                        {u.isActive ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

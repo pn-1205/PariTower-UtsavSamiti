@@ -326,9 +326,9 @@ export default function TransactionsPage() {
             return (
               <div
                 key={`${t.kind}-${t.id}`}
-                className="p-4 flex items-center justify-between gap-3 hover:bg-gray-50/60 transition-colors"
+                className="p-3.5 sm:p-4 flex items-center justify-between gap-2.5 sm:gap-3 hover:bg-gray-50/60 transition-colors"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
                   <div
                     className={`p-2 rounded-xl shrink-0 mt-0.5 ${
                       isTransfer
@@ -351,12 +351,12 @@ export default function TransactionsPage() {
                     )}
                   </div>
 
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-gray-900">{t.party}</span>
+                      <span className="font-bold text-xs sm:text-sm text-gray-900 truncate max-w-full">{t.party}</span>
                       
                       {/* Festival Badge */}
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70 shrink-0">
                         {t.festival || 'Ganesh Festival'}
                       </span>
 
