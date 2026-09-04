@@ -85,3 +85,10 @@ body {
 .marquee-container:hover .marquee-content {
   animation-play-state: paused;
 }
+
+/* Polished styling for any native select dropdown options */
+select option {
+  background-color: #1c1917;
+  color: #f5f5f4;
+  padding: 8px 12px;
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -17,11 +17,29 @@ import {
   Download,
   Share2,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 import { DEFAULT_FESTIVALS } from '@/lib/festivalUtils';
 import { formatCurrency } from '@/lib/utils';
 import { BorderBeam } from '@/components/ui/BorderBeam';
 import { triggerFestiveConfetti } from '@/components/ui/Confetti';
+
+const DEFAULT_UPI_ACCOUNTS = [
+  {
+    id: 'acc_suryakant',
+    name: 'Suryakant Dilip Sabale',
+    upiId: '9921137881@icici',
+    bankName: 'ICICI Bank',
+    isDefault: true,
+  },
+  {
+    id: 'acc_rajeshwar',
+    name: 'Rajeshwar Dinkar Gawali',
+    upiId: '9552051087@ptyes',
+    bankName: 'Yes Bank',
+    isDefault: false,
+  },
+];
 
 export default function QuickDonateWidget() {
   const searchParams = useSearchParams();
@@ -32,20 +50,35 @@ export default function QuickDonateWidget() {
   const initialAcc = searchParams.get('acc') || '';
 
   const [festivals, setFestivals] = useState<string[]>(DEFAULT_FESTIVALS);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>(DEFAULT_UPI_ACCOUNTS);
   const [flats, setFlats] = useState<any[]>([]);
 
   // Form states
   const [selectedFestival, setSelectedFestival] = useState<string>(initialFest || 'Ganesh Festival');
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(initialAcc || 'acc_suryakant');
   const [donorType, setDonorType] = useState<'flat' | 'other'>('flat');
   const [flatNumberInput, setFlatNumberInput] = useState<string>(initialFlat);
   const [selectedFlatId, setSelectedFlatId] = useState<string>('');
   const [donorName, setDonorName] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
-  const [amount, setAmount] = useState<string>('501');
+  const [amount, setAmount] = useState<string>('351');
   const [customAmount, setCustomAmount] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+
+  // Dropdown states
+  const [festivalDropdownOpen, setFestivalDropdownOpen] = useState<boolean>(false);
+  const festivalDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close festival dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (festivalDropdownRef.current && !festivalDropdownRef.current.contains(event.target as Node)) {
+        setFestivalDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // UI flow states
   const [copied, setCopied] = useState<boolean>(false);
@@ -64,8 +97,8 @@ export default function QuickDonateWidget() {
     }
   }, []);
 
-  // Quick amount preset chips
-  const PRESET_AMOUNTS = ['251', '501', '1100', '2100', '5100'];
+  // Quick amount preset chips (minimum 351, 501, 1100, 2100, 5100)
+  const PRESET_AMOUNTS = ['351', '501', '1100', '2100', '5100'];
 
   // 1. Fetch festivals, accounts, and flats
   useEffect(() => {
@@ -87,15 +120,21 @@ export default function QuickDonateWidget() {
         if (accRes.ok) {
           const aData = await accRes.json();
           if (aData.accounts && aData.accounts.length > 0) {
-            setAccounts(aData.accounts);
-            // Default selected account
-            if (initialAcc) {
-              const matched = aData.accounts.find((a: any) => a.id === initialAcc);
-              if (matched) setSelectedAccountId(matched.id);
-              else setSelectedAccountId(aData.accounts[0].id);
-            } else {
-              const def = aData.accounts.find((a: any) => a.isDefault) || aData.accounts[0];
-              setSelectedAccountId(def.id);
+            // Filter strictly for active accounts with valid UPI IDs
+            const upiAccounts = aData.accounts.filter(
+              (a: any) => a.accountType === 'UPI_BANK' && a.upiId && a.isActive !== false
+            );
+            if (upiAccounts.length > 0) {
+              setAccounts(upiAccounts);
+              // Default selected account
+              if (initialAcc) {
+                const matched = upiAccounts.find((a: any) => a.id === initialAcc);
+                if (matched) setSelectedAccountId(matched.id);
+                else setSelectedAccountId(upiAccounts[0].id);
+              } else {
+                const def = upiAccounts.find((a: any) => a.isDefault) || upiAccounts[0];
+                setSelectedAccountId(def.id);
+              }
             }
           }
         }
@@ -426,41 +465,111 @@ export default function QuickDonateWidget() {
           )}
 
           {/* Row 1: Festival & Receiving Account Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Festival Selector */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider mb-1">
-                Festival / Event *
-              </label>
-              <select
-                value={selectedFestival}
-                onChange={(e) => setSelectedFestival(e.target.value)}
-                className="w-full text-xs font-bold px-3 py-2.5 bg-white/10 border border-white/20 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none"
+          <div className="space-y-3.5">
+            {/* Festival Custom Dropdown */}
+            <div className="relative" ref={festivalDropdownRef}>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider">
+                  Festival / Event *
+                </label>
+                <span className="text-[10px] text-amber-200/70 font-medium">Select utsav celebration</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFestivalDropdownOpen(!festivalDropdownOpen)}
+                className="w-full text-xs font-bold px-3.5 py-2.5 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-amber-400/50 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none flex items-center justify-between transition-all shadow-inner"
               >
-                {festivals.map((f) => (
-                  <option key={f} value={f} className="text-stone-900">
-                    {f}
-                  </option>
-                ))}
-              </select>
+                <div className="flex items-center gap-2 truncate">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                  <span className="truncate">{selectedFestival}</span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-stone-300 transition-transform duration-200 flex-shrink-0 ${
+                    festivalDropdownOpen ? 'rotate-180 text-amber-400' : ''
+                  }`}
+                />
+              </button>
+
+              {festivalDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-stone-900/95 backdrop-blur-xl border border-amber-500/30 rounded-xl shadow-2xl p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                  {festivals.map((f) => {
+                    const isFestSelected = selectedFestival === f;
+                    return (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => {
+                          setSelectedFestival(f);
+                          setFestivalDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
+                          isFestSelected
+                            ? 'bg-amber-400 text-rose-950 font-black shadow-sm'
+                            : 'text-stone-200 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span>{f}</span>
+                        {isFestSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Receiving Account Picker */}
+            {/* Receiving Account 2-Option Card Selector */}
             <div>
-              <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider mb-1">
-                Payee Account (Receiver)
-              </label>
-              <select
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full text-xs font-bold px-3 py-2.5 bg-white/10 border border-white/20 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none"
-              >
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id} className="text-stone-900">
-                    {acc.name} {acc.upiId ? `(${acc.upiId})` : ''} {acc.isDefault ? '• Default' : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider">
+                  Payee Account (Receiver) *
+                </label>
+                <span className="text-[10px] text-amber-200/80 font-semibold">100% direct committee receiver</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {accounts.map((acc) => {
+                  const isSelected = activeAccount.id === acc.id;
+                  return (
+                    <button
+                      key={acc.id}
+                      type="button"
+                      onClick={() => setSelectedAccountId(acc.id)}
+                      className={`relative text-left p-3 rounded-xl border transition-all duration-200 flex items-start gap-2.5 ${
+                        isSelected
+                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/40'
+                          : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <div
+                        className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-400 text-rose-950'
+                            : 'border-stone-500 bg-transparent'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-black truncate text-white">{acc.name}</span>
+                          {acc.isDefault && (
+                            <span className="text-[9px] px-1.5 py-0.5 bg-amber-400/30 text-amber-300 rounded font-bold border border-amber-400/40 flex-shrink-0">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-amber-200 font-mono font-bold tracking-tight truncate mt-0.5">
+                          {acc.upiId}
+                        </div>
+                        {acc.bankName && (
+                          <div className="text-[10px] text-stone-400 font-medium truncate mt-0.5">
+                            {acc.bankName}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

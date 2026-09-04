@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
-import { User, Search, PlusCircle, Phone, Gift, DollarSign, CheckCircle2 } from 'lucide-react';
+import { User, Search, PlusCircle, Phone, Gift, CheckCircle2 } from 'lucide-react';
 
 export default function ContributorsPage() {
   const { user, isAuthenticated, refreshTrigger, triggerRefresh } = useAuth();

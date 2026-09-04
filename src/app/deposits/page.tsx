@@ -5,7 +5,7 @@ import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, formatTime, downloadCsv } from '@/lib/utils';
 import { getCached } from '@/lib/clientCache';
 import {
-  DollarSign,
+  IndianRupee,
   Search,
   PlusCircle,
   Paperclip,
@@ -163,7 +163,7 @@ export default function DepositsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-emerald-600" />
+            <IndianRupee className="w-6 h-6 text-emerald-600" />
             <h1 className="text-xl sm:text-2xl font-black text-gray-900">Money Received</h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -331,7 +331,7 @@ export default function DepositsPage() {
         </div>
       ) : deposits.length === 0 ? (
         <div className="bg-white p-12 text-center rounded-2xl border border-gray-200">
-          <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <IndianRupee className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-700 font-bold">No deposits found.</p>
           <p className="text-xs text-gray-400 mt-1">Try changing your filters or add a new deposit.</p>
         </div>

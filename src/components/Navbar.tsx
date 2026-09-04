@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthContext';
 import {
-  DollarSign,
+  IndianRupee,
   TrendingDown,
   FileText,
   PlusCircle,
@@ -31,7 +31,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Donate', href: '/donate', icon: Heart },
-    { name: 'Money Received', href: '/deposits', icon: DollarSign },
+    { name: 'Money Received', href: '/deposits', icon: IndianRupee },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Donations', href: '/donations', icon: Gift },
     { name: 'Ledger', href: '/transactions', icon: BookOpen },

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, DollarSign, TrendingDown, Gift, MoreHorizontal, Plus } from 'lucide-react';
+import { Home, IndianRupee, TrendingDown, Gift, MoreHorizontal, Plus } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 export default function BottomNav() {
@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   const items = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Received', href: '/deposits', icon: DollarSign },
+    { name: 'Received', href: '/deposits', icon: IndianRupee },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Donations', href: '/donations', icon: Gift },
     { name: 'Ledger', href: '/transactions', icon: MoreHorizontal },
