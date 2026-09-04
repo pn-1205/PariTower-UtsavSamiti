@@ -86,6 +86,7 @@ export default function QuickDonateWidget() {
   const [error, setError] = useState<string>('');
   const [successReceipt, setSuccessReceipt] = useState<any>(null);
   const [showQrOnMobile, setShowQrOnMobile] = useState<boolean>(false);
+  const [appOpenHint, setAppOpenHint] = useState<boolean>(false);
   const [isAndroid, setIsAndroid] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
 
@@ -186,9 +187,11 @@ export default function QuickDonateWidget() {
 
   const finalAmount = amount === 'custom' ? parseFloat(customAmount) || 0 : parseFloat(amount) || 0;
 
-  // Compute effective donor name (auto-fill from flat if entered)
+  // Compute effective donor name (auto-fill from flat if entered, default to Resident so payment is never blocked)
   const effectiveDonorName =
-    donorName.trim() || (donorType === 'flat' && flatNumberInput.trim() ? `Flat ${flatNumberInput.trim()}` : '');
+    donorName.trim() ||
+    (donorType === 'flat' && flatNumberInput.trim() ? `Flat ${flatNumberInput.trim()}` : '') ||
+    'Resident';
 
   // NPCI-compliant parameters
   const upiPayee = activeAccount.upiId || '9921137881@icici';
@@ -197,41 +200,38 @@ export default function QuickDonateWidget() {
     .trim()
     .slice(0, 50);
 
-  const amtStr = finalAmount > 0 ? String(finalAmount) : '';
-  const rawNote = `${selectedFestival} ${effectiveDonorName || 'Utsav'}`;
-  const cleanNote = rawNote.replace(/[^a-zA-Z0-9 ]/g, '').trim().slice(0, 30);
+  const amtStr = finalAmount > 0 ? String(finalAmount) : '351';
+  const rawNote = `${selectedFestival} ${effectiveDonorName}`;
+  const cleanNote = rawNote.replace(/[^a-zA-Z0-9 ]/g, ' ').trim().slice(0, 30);
 
   const queryParams = `pa=${encodeURIComponent(upiPayee)}&pn=${encodeURIComponent(cleanName)}&am=${encodeURIComponent(amtStr)}&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
 
-  // 1. Standard Universal UPI URI (for iOS, scanners, and universal handlers)
+  // 1. Standard Universal UPI URI (opens native OS UPI chooser on Android & iOS)
   const universalUpiUri = `upi://pay?${queryParams}`;
 
-  // 2. Android Chrome Universal Intent (triggers system UPI app chooser dialog directly)
-  const androidGenericIntent = `intent://upi/pay?${queryParams}#Intent;scheme=upi;end;`;
-
-  // 3. Specific App Intents with Play Store fallback
+  // 2. Direct App Intents (Android) and Custom Schemes (iOS)
   const gpayLink = isAndroid
-    ? `intent://upi/pay?${queryParams}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;S.browser_fallback_url=${encodeURIComponent(universalUpiUri)};end;`
+    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end;`
     : `tez://upi/pay?${queryParams}`;
 
   const phonepeLink = isAndroid
-    ? `intent://upi/pay?${queryParams}#Intent;scheme=upi;package=com.phonepe.app;S.browser_fallback_url=${encodeURIComponent(universalUpiUri)};end;`
+    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.phonepe.app;end;`
     : `phonepe://pay?${queryParams}`;
 
   const paytmLink = isAndroid
-    ? `intent://upi/pay?${queryParams}#Intent;scheme=upi;package=net.one97.paytm;S.browser_fallback_url=${encodeURIComponent(universalUpiUri)};end;`
+    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=net.one97.paytm;end;`
     : `paytmmp://pay?${queryParams}`;
 
   const bhimLink = isAndroid
-    ? `intent://upi/pay?${queryParams}#Intent;scheme=upi;package=in.org.npci.upiapp;S.browser_fallback_url=${encodeURIComponent(universalUpiUri)};end;`
+    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=in.org.npci.upiapp;end;`
     : universalUpiUri;
 
   const credLink = isAndroid
-    ? `intent://upi/pay?${queryParams}#Intent;scheme=upi;package=com.dreamplug.androidapp;S.browser_fallback_url=${encodeURIComponent(universalUpiUri)};end;`
+    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.dreamplug.androidapp;end;`
     : universalUpiUri;
 
-  // Primary link for universal 1-tap button
-  const primaryUpiLink = isAndroid ? androidGenericIntent : universalUpiUri;
+  // Primary link for universal 1-tap button: standard upi://pay works across Android & iOS
+  const primaryUpiLink = universalUpiUri;
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiPayee);
@@ -239,9 +239,21 @@ export default function QuickDonateWidget() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Synchronously launch payment link and asynchronously log pending transaction
+  // Launch payment link and asynchronously log pending transaction
   const handlePayClick = (e: React.MouseEvent<HTMLAnchorElement>, targetUri: string) => {
     setError('');
+
+    // If on desktop browser, inform user to scan QR code
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|iphone|ipad|ipod|mobile/i.test(ua);
+      if (!isMobileDevice) {
+        e.preventDefault();
+        setShowQrOnMobile(true);
+        setError('💻 You are on a computer. Please scan the QR code to the right with Google Pay, PhonePe, or Paytm on your phone, or copy the UPI ID below.');
+        return;
+      }
+    }
 
     if (finalAmount <= 0) {
       e.preventDefault();
@@ -249,22 +261,10 @@ export default function QuickDonateWidget() {
       return;
     }
 
-    if (!effectiveDonorName) {
-      e.preventDefault();
-      setError(
-        donorType === 'flat'
-          ? 'Please enter your Flat number or Name.'
-          : 'Please enter your Name before making payment.'
-      );
-      return;
-    }
+    // Display fallback hint on mobile in case the browser blocks custom scheme handlers
+    setAppOpenHint(true);
 
-    // Trigger direct window.location as secondary safeguard in same user event
-    try {
-      window.location.href = targetUri;
-    } catch (_) {}
-
-    // In background, log the transaction to database with exact timestamp
+    // Asynchronously log transaction to database without blocking browser navigation
     try {
       fetch('/api/donate', {
         method: 'POST',
@@ -281,15 +281,7 @@ export default function QuickDonateWidget() {
           phone: phone.trim() || null,
           notes: notes.trim() || null,
         }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.receiptNo) {
-            setSuccessReceipt(data);
-            triggerFestiveConfetti();
-          }
-        })
-        .catch((err) => console.error('Error logging payment:', err));
+      }).catch((err) => console.error('Error logging payment:', err));
     } catch (err) {
       console.error(err);
     }
@@ -740,6 +732,27 @@ export default function QuickDonateWidget() {
                 <ArrowRight className="w-4.5 h-4.5 shrink-0" />
               </a>
 
+              {/* Help hint if browser or OS blocks automatic UPI app switching */}
+              {appOpenHint && (
+                <div className="p-3 bg-amber-500/15 border border-amber-400/40 rounded-xl text-xs space-y-1.5 animate-in fade-in-0 duration-200">
+                  <div className="flex items-center justify-between font-bold text-amber-300">
+                    <span>📱 UPI App didn't open automatically?</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowQrOnMobile(true)}
+                      className="text-[11px] underline text-white hover:text-amber-200 font-bold"
+                    >
+                      Show QR Code
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-stone-300 leading-relaxed">
+                    • Tap your specific app below (<strong>GPay</strong>, <strong>PhonePe</strong>, or <strong>Paytm</strong>).<br />
+                    • Or copy UPI ID (<strong className="text-amber-200 font-mono">{upiPayee}</strong>) and pay in your app.<br />
+                    • Or scan the QR code using Google Pay or phone camera.
+                  </p>
+                </div>
+              )}
+
               {/* App-specific shortcuts */}
               <div>
                 <div className="text-[10px] text-stone-300 font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
@@ -803,14 +816,14 @@ export default function QuickDonateWidget() {
               </div>
 
               {/* Mobile QR & Manual fallback toggle */}
-              <div className="flex items-center justify-between pt-0.5 text-[11px]">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
                 <button
                   type="button"
                   onClick={() => setShowQrOnMobile(!showQrOnMobile)}
-                  className="text-amber-300 hover:text-amber-200 underline font-semibold flex items-center gap-1 md:hidden"
+                  className="px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all md:hidden shadow-sm"
                 >
-                  <QrCode className="w-3.5 h-3.5" />
-                  {showQrOnMobile ? 'Hide QR Code' : 'Scan via QR Code instead'}
+                  <QrCode className="w-4 h-4 text-amber-300" />
+                  <span>{showQrOnMobile ? 'Hide QR Code' : 'Scan via QR Code instead'}</span>
                 </button>
                 <button
                   type="button"
