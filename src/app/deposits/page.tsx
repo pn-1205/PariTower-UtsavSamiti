@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, formatTime, downloadCsv } from '@/lib/utils';
-import { getCached } from '@/lib/clientCache';
+import { getCached, setCached } from '@/lib/clientCache';
 import {
   IndianRupee,
   Search,
@@ -44,6 +44,7 @@ export default function DepositsPage() {
   const {
     user,
     isAuthenticated,
+    setLoginModalOpen,
     setAddDepositModalOpen,
     setLightboxAttachment,
     refreshTrigger,
@@ -73,22 +74,31 @@ export default function DepositsPage() {
 
   const fetchDeposits = async () => {
     try {
-      setLoading(true);
+      if (deposits.length === 0) setLoading(true);
       const params = new URLSearchParams();
       if (selectedFy !== 'all') params.set('fy', selectedFy);
-      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (selectedFestival !== 'all') params.set('festival', selectedFestival);
       if (methodFilter !== 'all') params.set('method', methodFilter);
       if (sourceFilter !== 'all') params.set('type', sourceFilter);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
       const res = await fetch(`/api/deposits?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setDeposits(json.deposits || []);
-        setPendingCount(json.pendingCount || 0);
+      const data = await res.json();
+      setDeposits(data.deposits || []);
+      setPendingCount(data.pendingCount || 0);
+      if (
+        selectedFy === getCurrentFinancialYear() &&
+        selectedFestival === 'all' &&
+        methodFilter === 'all' &&
+        sourceFilter === 'all' &&
+        statusFilter === 'all' &&
+        !searchQuery.trim()
+      ) {
+        setCached('deposits', data.deposits || []);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -96,28 +106,25 @@ export default function DepositsPage() {
 
   useEffect(() => {
     fetchDeposits();
-  }, [selectedFestival, selectedFy, statusFilter, methodFilter, sourceFilter, searchQuery, refreshTrigger]);
+  }, [selectedFy, selectedFestival, methodFilter, sourceFilter, statusFilter, refreshTrigger, searchQuery]);
 
-  const totalAmount = deposits
-    .filter((d) => d.status === 'VERIFIED')
-    .reduce((acc, d) => acc + (d.amount || 0), 0);
+  const totalAmount = deposits.reduce((sum, d) => sum + (d.amount || 0), 0);
 
   const handleApprove = async (id: string) => {
+    setApprovingId(id);
     try {
-      setApprovingId(id);
       const res = await fetch(`/api/deposits/${id}/approve`, {
         method: 'POST',
       });
       if (res.ok) {
         triggerRefresh();
-        fetchDeposits();
       } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to approve deposit');
+        const d = await res.json();
+        alert(d.error || 'Failed to approve deposit');
       }
-    } catch (e) {
-      console.error(e);
-      alert('Network error approving deposit');
+    } catch (err) {
+      console.error(err);
+      alert('Error approving deposit');
     } finally {
       setApprovingId(null);
     }
@@ -134,19 +141,45 @@ export default function DepositsPage() {
   };
 
   const handleExportCsv = () => {
-    const headers = ['Date', 'Status', 'Donor Name', 'Flat / Source', 'Amount (INR)', 'Payment Method', 'UTR Number', 'Account', 'Received By', 'Notes'];
-    const rows = deposits.map((d) => [
-      formatDate(d.receivedDate),
-      d.status,
-      `"${d.donorName || d.contributor.name}"`,
-      `"${d.contributor.flat?.altName ? `Flat ${d.contributor.flat.altName}` : d.contributor.name}"`,
-      d.amount,
-      d.paymentMethod,
-      `"${d.utrNumber || ''}"`,
-      `"${d.paymentAccount?.name || ''}"`,
-      `"${d.receivedByUser?.name || 'Awaiting Verification'}"`,
-      `"${(d.notes || '').replace(/"/g, '""')}"`,
-    ]);
+    const headers = [
+      'Receipt No.',
+      'Date',
+      'Time',
+      'Festival',
+      'Donor Name',
+      'Contributor Name',
+      'Flat / Category',
+      'Amount (INR)',
+      'Payment Method',
+      'Status',
+      'UTR Number',
+      'Received Into Account',
+      'Verified By',
+      'Notes',
+    ];
+
+    const rows = deposits.map((d, index) => {
+      const flat = d.contributor?.flat;
+      const flatLabel = flat ? `Flat ${flat.altName || flat.displayName}` : d.contributor?.category || 'External';
+      const timeStr = formatTime(d.receivedDate) || '';
+
+      return [
+        `REC-${String(index + 1).padStart(4, '0')}`,
+        formatDate(d.receivedDate),
+        timeStr,
+        `"${d.festival || 'General Utsav Fund'}"`,
+        `"${d.donorName || ''}"`,
+        `"${d.contributor?.name || ''}"`,
+        `"${flatLabel}"`,
+        d.amount,
+        d.paymentMethod,
+        d.status || 'VERIFIED',
+        d.utrNumber ? `"${d.utrNumber}"` : '',
+        d.paymentAccount ? `"${d.paymentAccount.name}"` : '',
+        `"${d.receivedByUser?.name || 'Admin'}"`,
+        `"${(d.notes || '').replace(/"/g, '""')}"`,
+      ];
+    });
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     downloadCsv('ptfc_money_received.csv', csvContent);
@@ -215,7 +248,7 @@ export default function DepositsPage() {
             Export CSV
           </button>
 
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <button
               onClick={() => setAddDepositModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 ml-1"
@@ -223,17 +256,22 @@ export default function DepositsPage() {
               <PlusCircle className="w-4 h-4" />
               + Add Deposit
             </button>
+          ) : (
+            <button
+              onClick={() => setLoginModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold rounded-xl shadow-sm transition-colors active:scale-95 ml-1"
+            >
+              Login to Add
+            </button>
           )}
         </div>
       </div>
 
-      {/* Modern Top-of-Screen FY Selector (Deposits are general fund) */}
       <TopFestivalSelector
         selectedFy={selectedFy}
         onFyChange={setSelectedFy}
-        selectedFestival="all"
-        onFestivalChange={() => {}}
-        hideFestival={true}
+        selectedFestival={selectedFestival}
+        onFestivalChange={setSelectedFestival}
       />
 
       {/* Verification Status Filter Pills */}
@@ -250,18 +288,18 @@ export default function DepositsPage() {
         </button>
         <button
           onClick={() => setStatusFilter('VERIFIED')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             statusFilter === 'VERIFIED'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-emerald-700 text-white shadow-sm'
               : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
           }`}
         >
-          <CheckCircle2 className="w-3.5 h-3.5" />
+          <Check className="w-3.5 h-3.5" />
           Verified Deposits
         </button>
         <button
           onClick={() => setStatusFilter('PENDING_VERIFICATION')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             statusFilter === 'PENDING_VERIFICATION'
               ? 'bg-amber-600 text-white shadow-sm'
               : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'
@@ -271,10 +309,8 @@ export default function DepositsPage() {
           Pending Verification
           {pendingCount > 0 && (
             <span
-              className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                statusFilter === 'PENDING_VERIFICATION'
-                  ? 'bg-white text-amber-700'
-                  : 'bg-amber-600 text-white'
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                statusFilter === 'PENDING_VERIFICATION' ? 'bg-white text-amber-800' : 'bg-amber-100 text-amber-900'
               }`}
             >
               {pendingCount}
@@ -285,7 +321,6 @@ export default function DepositsPage() {
 
       {/* Filter Bar */}
       <div className="bg-white/95 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl shadow-sm border border-stone-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 relative z-10">
-        {/* Search */}
         <div className="sm:col-span-5 relative">
           <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           <input
@@ -293,11 +328,10 @@ export default function DepositsPage() {
             placeholder="Search by donor name, flat (e.g. 808), notes, receiver..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none transition-all placeholder:text-stone-400"
+            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all placeholder:text-stone-400"
           />
         </div>
 
-        {/* Source selector */}
         <div className="sm:col-span-3">
           <CustomSelect
             value={sourceFilter}
@@ -305,10 +339,10 @@ export default function DepositsPage() {
             options={SOURCE_OPTIONS}
             headerLabel="Filter By Source"
             icon={Building2}
+            theme="emerald"
           />
         </div>
 
-        {/* Payment method selector */}
         <div className="sm:col-span-4">
           <CustomSelect
             value={methodFilter}
@@ -316,6 +350,7 @@ export default function DepositsPage() {
             options={METHOD_OPTIONS}
             headerLabel="Filter By Payment Method"
             icon={CreditCard}
+            theme="emerald"
           />
         </div>
       </div>
@@ -422,14 +457,20 @@ export default function DepositsPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {isPending && isAuthenticated && (
+                      {isPending && (
                         <button
-                          onClick={() => handleApprove(d.id)}
+                          onClick={() => {
+                            if (isAuthenticated) {
+                              handleApprove(d.id);
+                            } else {
+                              setLoginModalOpen(true);
+                            }
+                          }}
                           disabled={approvingId === d.id}
                           className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg shadow-sm active:scale-95 disabled:opacity-50"
                         >
-                          <Check className="w-3.5 h-3.5" />
-                          {approvingId === d.id ? 'Approving...' : 'Approve'}
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          {approvingId === d.id ? 'Approving...' : 'Verify Now'}
                         </button>
                       )}
 
@@ -459,13 +500,13 @@ export default function DepositsPage() {
             })}
           </div>
 
-          {/* Desktop Table */}
-          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Desktop Table with overflow-x-auto so columns are never truncated */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
-                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Status & Action</th>
                   <th className="px-5 py-3.5">Festival</th>
                   <th className="px-5 py-3.5">Donor / Contributor</th>
                   <th className="px-5 py-3.5">Flat / Source</th>
@@ -498,10 +539,27 @@ export default function DepositsPage() {
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         {isPending ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                            <Clock className="w-3 h-3 text-amber-600" />
-                            Pending
-                          </span>
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              Pending
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (isAuthenticated) {
+                                  handleApprove(d.id);
+                                } else {
+                                  setLoginModalOpen(true);
+                                }
+                              }}
+                              disabled={approvingId === d.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
+                              title="Verify and approve this deposit into General Ledger"
+                            >
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              {approvingId === d.id ? 'Verifying...' : 'Verify Now'}
+                            </button>
+                          </div>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                             <Check className="w-3 h-3 text-emerald-600" />

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { X, ArrowRightLeft, Calendar, IndianRupee, FileText } from 'lucide-react';
 import { DEFAULT_FESTIVALS } from '@/lib/festivalUtils';
+import CustomSelect from './ui/CustomSelect';
 
 export default function TransferFundModal() {
   const { transferFundModalOpen, setTransferFundModalOpen, triggerRefresh } = useAuth();
@@ -114,34 +115,26 @@ export default function TransferFundModal() {
               <label className="block text-[11px] font-bold text-rose-900 uppercase tracking-wider mb-1">
                 From Festival (Debit)
               </label>
-              <select
+              <CustomSelect
                 value={fromFestival}
-                onChange={(e) => setFromFestival(e.target.value)}
-                className="w-full text-xs font-semibold px-2.5 py-2 bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-rose-800 focus:outline-none"
-              >
-                {festivalList.map((f) => (
-                  <option key={`from-${f}`} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+                onChange={setFromFestival}
+                options={festivalList.map((f) => ({ value: f, label: f }))}
+                theme="rose"
+                size="sm"
+              />
             </div>
 
             <div>
               <label className="block text-[11px] font-bold text-emerald-900 uppercase tracking-wider mb-1">
                 To Festival (Credit)
               </label>
-              <select
+              <CustomSelect
                 value={toFestival}
-                onChange={(e) => setToFestival(e.target.value)}
-                className="w-full text-xs font-semibold px-2.5 py-2 bg-white border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-              >
-                {festivalList.map((f) => (
-                  <option key={`to-${f}`} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+                onChange={setToFestival}
+                options={festivalList.map((f) => ({ value: f, label: f }))}
+                theme="emerald"
+                size="sm"
+              />
             </div>
           </div>
 

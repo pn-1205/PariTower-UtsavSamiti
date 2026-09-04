@@ -105,6 +105,8 @@ export async function POST(request: Request) {
       amount,
       paymentMethod,
       paymentAccountId,
+      customRecipientName,
+      customRecipientUpi,
       utrNumber,
       receivedDate,
       notes,
@@ -153,6 +155,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Payment method is required.' }, { status: 400 });
     }
 
+    // Dynamic custom recipient support
+    if (customRecipientName && customRecipientName.trim()) {
+      const cleanRecipientName = customRecipientName.trim();
+      let customAcc = await prisma.paymentAccount.findFirst({
+        where: { name: cleanRecipientName },
+      });
+      if (!customAcc) {
+        customAcc = await prisma.paymentAccount.create({
+          data: {
+            name: cleanRecipientName,
+            accountType: paymentMethod === 'Cash' ? 'CASH_IN_HAND' : 'UPI_BANK',
+            upiId: customRecipientUpi?.trim() || null,
+            isActive: true,
+          },
+        });
+      }
+      paymentAccountId = customAcc.id;
+    } else if (paymentAccountId === '__custom__') {
+      return NextResponse.json({ error: 'Please enter custom recipient name.' }, { status: 400 });
+    }
+
     const dateVal = receivedDate ? new Date(receivedDate) : new Date();
     const validFestival = await ensureFestivalRegistered(festival);
 
@@ -165,7 +188,7 @@ export async function POST(request: Request) {
         paymentMethod,
         status: 'VERIFIED',
         utrNumber: utrNumber?.trim() || null,
-        paymentAccountId: paymentAccountId || null,
+        paymentAccountId: (paymentAccountId && paymentAccountId !== '__custom__') ? paymentAccountId : null,
         receivedDate: dateVal,
         receivedByUserId: user.id,
         notes: notes?.trim() || null,

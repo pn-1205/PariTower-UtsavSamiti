@@ -6,6 +6,7 @@ import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, TrendingDown } from 'lucide-react';
 import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
 import FestivalCombobox from './FestivalCombobox';
+import CustomSelect from './ui/CustomSelect';
 
 export default function AddExpenseModal() {
   const { addExpenseModalOpen, setAddExpenseModalOpen, user, triggerRefresh } = useAuth();
@@ -175,15 +176,13 @@ export default function AddExpenseModal() {
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
               Expense Category *
             </label>
-            <select
+            <CustomSelect
               value={expenseCategory}
-              onChange={(e) => setExpenseCategory(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white font-medium"
-            >
-              {EXPENSE_CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              onChange={setExpenseCategory}
+              options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))}
+              theme="rose"
+              size="md"
+            />
           </div>
 
           {/* Description */}
@@ -225,15 +224,13 @@ export default function AddExpenseModal() {
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Payment Method *
               </label>
-              <select
+              <CustomSelect
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white font-medium"
-              >
-                {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={setPaymentMethod}
+                options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                theme="rose"
+                size="md"
+              />
             </div>
           </div>
 
@@ -243,17 +240,17 @@ export default function AddExpenseModal() {
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Withdrawn / Paid From Account *
               </label>
-              <select
+              <CustomSelect
                 value={paymentAccountId}
-                onChange={(e) => setPaymentAccountId(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-semibold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white"
-              >
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.accountType === 'UPI_BANK' ? acc.upiId : 'Cash in Hand'})
-                  </option>
-                ))}
-              </select>
+                onChange={setPaymentAccountId}
+                options={accounts.map((acc) => ({
+                  value: acc.id,
+                  label: acc.name,
+                  description: acc.accountType === 'UPI_BANK' ? `UPI: ${acc.upiId}` : 'Cash in Hand (Samiti Treasury)',
+                }))}
+                theme="rose"
+                size="md"
+              />
             </div>
           )}
 

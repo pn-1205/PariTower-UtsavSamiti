@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatDateTime } from '@/lib/utils';
 import { Users, PlusCircle, ShieldCheck, ShieldAlert, KeyRound, UserCheck, UserX, AlertCircle } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function UserManagementPage() {
   const { user, isAdmin, refreshTrigger } = useAuth();
@@ -282,14 +283,16 @@ export default function UserManagementPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Role *</label>
-                <select
+                <CustomSelect
                   value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white"
-                >
-                  <option value="ENTRY_USER">Entry User (Can add transactions & view)</option>
-                  <option value="ADMIN">Administrator (Full access & user management)</option>
-                </select>
+                  onChange={(val: any) => setRole(val)}
+                  options={[
+                    { value: 'ENTRY_USER', label: 'Entry User (Can add transactions & view)' },
+                    { value: 'ADMIN', label: 'Administrator (Full access & user management)' },
+                  ]}
+                  theme="stone"
+                  size="md"
+                />
               </div>
 
               <div className="flex gap-2 pt-2">

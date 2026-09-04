@@ -233,6 +233,7 @@ export default function ExpensesPage() {
             options={CATEGORY_OPTIONS}
             headerLabel="Filter By Category"
             icon={Tag}
+            theme="rose"
           />
         </div>
 
@@ -243,6 +244,7 @@ export default function ExpensesPage() {
             options={METHOD_OPTIONS}
             headerLabel="Filter By Payment Method"
             icon={CreditCard}
+            theme="rose"
           />
         </div>
       </div>

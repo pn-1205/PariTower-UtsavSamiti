@@ -213,15 +213,13 @@ export default function ContributorsPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Category</label>
-                <select
+                <CustomSelect
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white"
-                >
-                  {CONTRIBUTOR_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                  onChange={setCategory}
+                  options={CONTRIBUTOR_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+                  theme="amber"
+                  size="md"
+                />
               </div>
 
               <div>

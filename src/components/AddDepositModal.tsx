@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { PAYMENT_METHODS, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Building2, User, Sparkles, Check } from 'lucide-react';
+import CustomSelect from './ui/CustomSelect';
 
 export default function AddDepositModal() {
   const { addDepositModalOpen, setAddDepositModalOpen, user, triggerRefresh } = useAuth();
@@ -29,6 +30,10 @@ export default function AddDepositModal() {
   const [notes, setNotes] = useState('');
   const [accounts, setAccounts] = useState<any[]>([]);
   const [paymentAccountId, setPaymentAccountId] = useState<string>('');
+
+  // Custom Recipient / Account state
+  const [customRecipientName, setCustomRecipientName] = useState('');
+  const [customRecipientUpi, setCustomRecipientUpi] = useState('');
 
   // Attachment
   const [attachment, setAttachment] = useState<any>(null);
@@ -156,6 +161,11 @@ export default function AddDepositModal() {
       return;
     }
 
+    if (paymentAccountId === '__custom__' && !customRecipientName.trim()) {
+      setError('Please enter custom recipient / account name.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/deposits', {
@@ -170,7 +180,9 @@ export default function AddDepositModal() {
           donorName: donorName.trim(),
           amount: parseFloat(amount),
           paymentMethod,
-          paymentAccountId: paymentAccountId || null,
+          paymentAccountId: paymentAccountId === '__custom__' ? undefined : (paymentAccountId || null),
+          customRecipientName: paymentAccountId === '__custom__' ? customRecipientName.trim() : undefined,
+          customRecipientUpi: paymentAccountId === '__custom__' ? customRecipientUpi.trim() : undefined,
           receivedDate,
           notes,
           attachment,
@@ -191,6 +203,8 @@ export default function AddDepositModal() {
         setAttachment(null);
         setContributorNameInput('');
         setContributorPhone('');
+        setCustomRecipientName('');
+        setCustomRecipientUpi('');
       }
     } catch (err) {
       setError('Failed to submit deposit.');
@@ -358,15 +372,13 @@ export default function AddDepositModal() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Category</label>
-                  <select
+                  <CustomSelect
                     value={contributorCategory}
-                    onChange={(e) => setContributorCategory(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
-                  >
-                    {CONTRIBUTOR_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                    onChange={setContributorCategory}
+                    options={CONTRIBUTOR_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                    theme="emerald"
+                    size="sm"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Phone (Optional)</label>
@@ -424,37 +436,100 @@ export default function AddDepositModal() {
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Payment Method *
               </label>
-              <select
+              <CustomSelect
                 value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-medium"
-              >
-                {PAYMENT_METHODS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={setPaymentMethod}
+                options={PAYMENT_METHODS.map((m) => ({ value: m, label: m }))}
+                theme="emerald"
+                size="md"
+              />
             </div>
           </div>
 
-          {/* Deposited Into Account */}
-          {accounts.length > 0 && (
-            <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+          {/* Deposited Into Account & Custom Recipient Support */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Deposited Into Account *
               </label>
-              <select
-                value={paymentAccountId}
-                onChange={(e) => setPaymentAccountId(e.target.value)}
-                className="w-full px-3 py-2 text-sm font-semibold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
-              >
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.accountType === 'UPI_BANK' ? acc.upiId : 'Cash in Hand'})
-                  </option>
-                ))}
-              </select>
+              {paymentAccountId !== '__custom__' && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentAccountId('__custom__')}
+                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
+                >
+                  + Add Custom Recipient
+                </button>
+              )}
             </div>
-          )}
+            <CustomSelect
+              value={paymentAccountId}
+              onChange={setPaymentAccountId}
+              options={[
+                ...accounts.map((acc) => ({
+                  value: acc.id,
+                  label: acc.name,
+                  description: acc.accountType === 'UPI_BANK' ? `UPI: ${acc.upiId}` : 'Cash in Hand (Samiti Treasury)',
+                })),
+                {
+                  value: '__custom__',
+                  label: '➕ Other / Custom Recipient or Account',
+                  description: 'Record into any other person, custodian, or account',
+                },
+              ]}
+              placeholder="Select account or recipient..."
+              theme="emerald"
+              size="md"
+            />
+
+            {paymentAccountId === '__custom__' && (
+              <div className="mt-2.5 p-3.5 bg-emerald-50/90 border border-emerald-300 rounded-2xl space-y-2.5 animate-in fade-in-0 duration-150">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-emerald-950">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Custom Recipient / Handled By</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const def = accounts[0];
+                      if (def) setPaymentAccountId(def.id);
+                    }}
+                    className="text-[10px] font-bold text-stone-500 hover:text-stone-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-950 uppercase tracking-wider mb-1">
+                    Recipient / Custodian Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Sachin Kadam / Society Bank Account / Sub-committee Pouch"
+                    value={customRecipientName}
+                    onChange={(e) => setCustomRecipientName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm font-semibold bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-stone-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-emerald-950 uppercase tracking-wider mb-1">
+                    UPI ID or Reference Details (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. sachin@okaxis or Handed in cash"
+                    value={customRecipientUpi}
+                    onChange={(e) => setCustomRecipientUpi(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-stone-400"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Date */}
           <div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { DONATION_TYPES, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Gift, Building2, User, Sparkles, Info, Check } from 'lucide-react';
+import CustomSelect from './ui/CustomSelect';
 
 export default function AddDonationModal() {
   const { addDonationModalOpen, setAddDonationModalOpen, user, triggerRefresh } = useAuth();
@@ -365,15 +366,13 @@ export default function AddDonationModal() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Category</label>
-                  <select
+                  <CustomSelect
                     value={contributorCategory}
-                    onChange={(e) => setContributorCategory(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
-                  >
-                    {CONTRIBUTOR_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                    onChange={setContributorCategory}
+                    options={CONTRIBUTOR_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                    theme="amber"
+                    size="sm"
+                  />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-gray-700 mb-1">Phone (Optional)</label>
@@ -413,15 +412,13 @@ export default function AddDonationModal() {
               <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                 Donation Type *
               </label>
-              <select
+              <CustomSelect
                 value={donationType}
-                onChange={(e) => setDonationType(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl bg-white font-medium"
-              >
-                {DONATION_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+                onChange={setDonationType}
+                options={DONATION_TYPES.map((t) => ({ value: t, label: t }))}
+                theme="amber"
+                size="md"
+              />
             </div>
 
             <div className="sm:col-span-2">

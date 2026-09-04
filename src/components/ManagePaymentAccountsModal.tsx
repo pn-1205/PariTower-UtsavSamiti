@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Building,
 } from 'lucide-react';
+import CustomSelect from './ui/CustomSelect';
 import { formatCurrency } from '@/lib/utils';
 
 interface ManagePaymentAccountsModalProps {
@@ -241,14 +242,16 @@ export default function ManagePaymentAccountsModal({
                   <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                     Account Type *
                   </label>
-                  <select
+                  <CustomSelect
                     value={accountType}
-                    onChange={(e: any) => setAccountType(e.target.value)}
-                    className="w-full text-xs font-bold px-3 py-2 bg-white border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:outline-none"
-                  >
-                    <option value="UPI_BANK">UPI / Personal Bank Account</option>
-                    <option value="CASH_IN_HAND">Cash in Hand (Samiti Cash)</option>
-                  </select>
+                    onChange={(val: any) => setAccountType(val)}
+                    options={[
+                      { value: 'UPI_BANK', label: 'UPI / Personal Bank Account' },
+                      { value: 'CASH_IN_HAND', label: 'Cash in Hand (Samiti Cash)' },
+                    ]}
+                    theme="maroon"
+                    size="sm"
+                  />
                 </div>
 
                 {accountType === 'UPI_BANK' && (
