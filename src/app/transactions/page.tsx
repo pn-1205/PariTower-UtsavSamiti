@@ -23,12 +23,15 @@ import {
   ArrowRightLeft,
   Calendar,
   Sparkles,
+  Landmark,
+  Wallet,
 } from 'lucide-react';
 
 export default function TransactionsPage() {
   const { setLightboxAttachment, setTransferFundModalOpen, isAuthenticated, refreshTrigger } = useAuth();
   const [transactions, setTransactions] = useState<any[]>(() => getCached('transactions') || []);
   const [loading, setLoading] = useState(() => !getCached('transactions'));
+  const [custodianBalances, setCustodianBalances] = useState<any[]>([]);
   const [summaryData, setSummaryData] = useState<any>(() => getCached('summaryData') || {
     totalReceived: 0,
     totalExpenses: 0,
@@ -56,6 +59,9 @@ export default function TransactionsPage() {
       if (res.ok) {
         const json = await res.json();
         setTransactions(json.transactions || []);
+        if (json.custodianBalances) {
+          setCustodianBalances(json.custodianBalances);
+        }
         if (json.totals) {
           const sumObj = {
             totalReceived: json.totals.totalIncome,
@@ -204,6 +210,47 @@ export default function TransactionsPage() {
         </div>
       </div>
 
+      {/* Custodian / Personal Accounts Balance Breakdown */}
+      {custodianBalances.length > 0 && (
+        <div className="bg-white rounded-2xl border border-stone-200 shadow-sm p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-purple-100 text-purple-800 rounded-lg">
+              <Landmark className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-gray-900">Custodian Accounts & Cash Holding</h3>
+              <p className="text-[11px] text-gray-500">Live breakdown of funds held across personal committee accounts and cash in hand</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {custodianBalances.map((acc) => (
+              <div
+                key={acc.id}
+                className="p-3.5 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-stone-100/60 transition-all flex flex-col justify-between"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="font-extrabold text-sm text-gray-900 block">{acc.name}</span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {acc.accountType === 'UPI_BANK' ? (acc.upiId || 'UPI') : 'Cash in Hand'}
+                    </span>
+                  </div>
+                  <span className={`text-sm font-black ${acc.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {formatCurrency(acc.balance)}
+                  </span>
+                </div>
+
+                <div className="mt-2.5 pt-2 border-t border-stone-200 flex items-center justify-between text-[11px]">
+                  <span className="text-emerald-700 font-medium">In: +{formatCurrency(acc.inflow)}</span>
+                  <span className="text-rose-700 font-medium">Out: -{formatCurrency(acc.outflow)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter Bar (Search + Type filter) */}
       <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
         <div className="sm:col-span-7 relative">
@@ -327,6 +374,13 @@ export default function TransactionsPage() {
                         {t.category}
                       </span>
 
+                      {/* Account Badge */}
+                      {t.accountName && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                          {t.accountName}
+                        </span>
+                      )}
+
                       {t.attachments?.length > 0 && (
                         <button
                           onClick={() => setLightboxAttachment(t.attachments[0])}
@@ -342,6 +396,11 @@ export default function TransactionsPage() {
                     <p className="text-[11px] text-gray-400 mt-0.5">
                       {formatDate(t.date)} • Handled by <span className="font-medium text-gray-600">{t.user}</span>
                       {t.paymentMethod ? ` • ${t.paymentMethod}` : ''}
+                      {t.utrNumber && (
+                        <span className="font-mono ml-1.5 text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded">
+                          UTR: {t.utrNumber}
+                        </span>
+                      )}
                       {t.notes && <span className="italic ml-1">({t.notes})</span>}
                     </p>
                   </div>

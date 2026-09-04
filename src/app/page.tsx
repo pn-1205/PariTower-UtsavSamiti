@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import QuickDonateWidget from '@/components/QuickDonateWidget';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { getCached, setCached } from '@/lib/clientCache';
@@ -75,6 +76,11 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+      {/* QUICK DONATION & CONTRIBUTION WIDGET (Top Section) */}
+      <Suspense fallback={<div className="h-48 bg-stone-100 rounded-3xl animate-pulse" />}>
+        <QuickDonateWidget />
+      </Suspense>
+
       {/* TOP FINANCIAL CARDS (HIGHLIGHTED BALANCE) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* Total Received */}

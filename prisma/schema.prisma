@@ -56,20 +56,24 @@ model Contributor {
 }
 
 model Deposit {
-  id               String       @id @default(cuid())
-  festival         String       @default("Ganesh Festival")
+  id               String          @id @default(cuid())
+  festival         String          @default("Ganesh Festival")
   contributorId    String
-  contributor      Contributor  @relation(fields: [contributorId], references: [id], onDelete: Cascade)
-  donorName        String?      // Compulsory manual donor name
+  contributor      Contributor     @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+  donorName        String?         // Compulsory manual donor name
   amount           Float
-  paymentMethod    String       // "Cash", "UPI", "Bank Transfer", "Other"
-  receivedDate     DateTime     @default(now())
-  receivedByUserId String
-  receivedByUser   User         @relation(fields: [receivedByUserId], references: [id])
+  paymentMethod    String          // "Cash", "UPI", "Bank Transfer", "Other"
+  status           String          @default("VERIFIED") // "PENDING_VERIFICATION", "VERIFIED", "REJECTED"
+  utrNumber        String?         // 12-digit UPI reference number
+  paymentAccountId String?
+  paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
+  receivedDate     DateTime        @default(now())
+  receivedByUserId String?
+  receivedByUser   User?           @relation(fields: [receivedByUserId], references: [id])
   notes            String?
   deletedAt        DateTime?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   attachments Attachment[]
 }
@@ -98,20 +102,22 @@ model Donation {
 }
 
 model Expense {
-  id              String       @id @default(cuid())
-  festival        String       @default("Ganesh Festival")
-  expenseCategory String       // "Food", "Decorations", "Sound System", "Venue", "Printing", "Transportation", "Materials", "Entertainment", "Utilities", "Volunteer/Staff", "Miscellaneous", "Other"
-  description     String
-  amount          Float
-  paymentMethod   String       // "Cash", "UPI", "Bank Transfer", "Other"
-  paidTo          String
-  expenseDate     DateTime     @default(now())
-  enteredByUserId String
-  enteredByUser   User         @relation(fields: [enteredByUserId], references: [id])
-  notes           String?
-  deletedAt       DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id               String          @id @default(cuid())
+  festival         String          @default("Ganesh Festival")
+  expenseCategory  String          // "Food", "Decorations", "Sound System", "Venue", "Printing", "Transportation", "Materials", "Entertainment", "Utilities", "Volunteer/Staff", "Miscellaneous", "Other"
+  description      String
+  amount           Float
+  paymentMethod    String          // "Cash", "UPI", "Bank Transfer", "Other"
+  paymentAccountId String?
+  paymentAccount   PaymentAccount? @relation(fields: [paymentAccountId], references: [id])
+  paidTo           String
+  expenseDate      DateTime        @default(now())
+  enteredByUserId  String
+  enteredByUser    User            @relation(fields: [enteredByUserId], references: [id])
+  notes            String?
+  deletedAt        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   attachments Attachment[]
 }
@@ -138,4 +144,21 @@ model Festival {
   name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PaymentAccount {
+  id            String    @id @default(cuid())
+  name          String    // e.g. "Rahul Sharma (Treasurer)"
+  accountType   String    @default("UPI_BANK") // "UPI_BANK", "CASH_IN_HAND"
+  upiId         String?   // e.g. "rahul@okhdfcbank"
+  phone         String?   // e.g. "9820012345"
+  bankName      String?   // e.g. "HDFC Bank"
+  accountNumber String?   // e.g. "XX1234"
+  isDefault     Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  deposits      Deposit[]
+  expenses      Expense[]
 }

@@ -3,23 +3,26 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, downloadCsv } from '@/lib/utils';
-import { getCached, setCached } from '@/lib/clientCache';
+import { getCached } from '@/lib/clientCache';
 import {
   DollarSign,
   Search,
-  Download,
   PlusCircle,
   Paperclip,
   Trash2,
   Building2,
   User,
-  Filter,
   FileSpreadsheet,
   FileText,
   FileCode,
+  Share2,
+  CheckCircle2,
+  Clock,
+  Check,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import TopFestivalSelector from '@/components/TopFestivalSelector';
+import ShareFlatLinkModal from '@/components/ShareFlatLinkModal';
 import { getCurrentFinancialYear } from '@/lib/festivalUtils';
 
 export default function DepositsPage() {
@@ -34,17 +37,23 @@ export default function DepositsPage() {
 
   const [deposits, setDeposits] = useState<any[]>(() => getCached('deposits') || []);
   const [loading, setLoading] = useState(() => !getCached('deposits'));
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Top Filter Selectors
   const [selectedFy, setSelectedFy] = useState<string>(getCurrentFinancialYear());
   const [selectedFestival, setSelectedFestival] = useState<string>('all');
+
+  // Verification Status Filter
+  const [statusFilter, setStatusFilter] = useState<'all' | 'VERIFIED' | 'PENDING_VERIFICATION'>('all');
 
   // Filters
   const [methodFilter, setMethodFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Delete confirm modal state
+  // Modals & Action States
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [deleteItem, setDeleteItem] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -54,6 +63,7 @@ export default function DepositsPage() {
       const params = new URLSearchParams();
       if (selectedFestival !== 'all') params.set('festival', selectedFestival);
       if (selectedFy !== 'all') params.set('fy', selectedFy);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
       if (methodFilter !== 'all') params.set('method', methodFilter);
       if (sourceFilter !== 'all') params.set('type', sourceFilter);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
@@ -62,6 +72,7 @@ export default function DepositsPage() {
       if (res.ok) {
         const json = await res.json();
         setDeposits(json.deposits || []);
+        setPendingCount(json.pendingCount || 0);
       }
     } catch (e) {
       console.error(e);
@@ -72,9 +83,32 @@ export default function DepositsPage() {
 
   useEffect(() => {
     fetchDeposits();
-  }, [selectedFestival, selectedFy, methodFilter, sourceFilter, searchQuery, refreshTrigger]);
+  }, [selectedFestival, selectedFy, statusFilter, methodFilter, sourceFilter, searchQuery, refreshTrigger]);
 
-  const totalAmount = deposits.reduce((acc, d) => acc + (d.amount || 0), 0);
+  const totalAmount = deposits
+    .filter((d) => d.status === 'VERIFIED')
+    .reduce((acc, d) => acc + (d.amount || 0), 0);
+
+  const handleApprove = async (id: string) => {
+    try {
+      setApprovingId(id);
+      const res = await fetch(`/api/deposits/${id}/approve`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        triggerRefresh();
+        fetchDeposits();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to approve deposit');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Network error approving deposit');
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   const handleExportPdf = async () => {
     const { exportDepositsToPdf } = await import('@/lib/exportLedger');
@@ -87,14 +121,17 @@ export default function DepositsPage() {
   };
 
   const handleExportCsv = () => {
-    const headers = ['Date', 'Donor Name', 'Flat / Source', 'Amount (INR)', 'Payment Method', 'Received By', 'Notes'];
+    const headers = ['Date', 'Status', 'Donor Name', 'Flat / Source', 'Amount (INR)', 'Payment Method', 'UTR Number', 'Account', 'Received By', 'Notes'];
     const rows = deposits.map((d) => [
       formatDate(d.receivedDate),
+      d.status,
       `"${d.donorName || d.contributor.name}"`,
       `"${d.contributor.flat?.altName ? `Flat ${d.contributor.flat.altName}` : d.contributor.name}"`,
       d.amount,
       d.paymentMethod,
-      `"${d.receivedByUser.name}"`,
+      `"${d.utrNumber || ''}"`,
+      `"${d.paymentAccount?.name || ''}"`,
+      `"${d.receivedByUser?.name || 'Awaiting Verification'}"`,
       `"${(d.notes || '').replace(/"/g, '""')}"`,
     ]);
 
@@ -130,11 +167,21 @@ export default function DepositsPage() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900">Money Received</h1>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Verified records of contributions received from flats and sponsors.
+            Records of contributions received from flats and sponsors.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Share Flat Link Button */}
+          <button
+            onClick={() => setShareModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-black rounded-xl shadow-sm transition-all active:scale-95"
+            title="Generate personalized link and QR code for WhatsApp sharing"
+          >
+            <Share2 className="w-4 h-4" />
+            Share Flat Link
+          </button>
+
           <button
             onClick={handleExportPdf}
             disabled={deposits.length === 0}
@@ -184,6 +231,53 @@ export default function DepositsPage() {
         selectedFestival={selectedFestival}
         onFestivalChange={setSelectedFestival}
       />
+
+      {/* Verification Status Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            statusFilter === 'all'
+              ? 'bg-stone-900 text-white shadow-sm'
+              : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
+          }`}
+        >
+          All Records
+        </button>
+        <button
+          onClick={() => setStatusFilter('VERIFIED')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            statusFilter === 'VERIFIED'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-200'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Verified Deposits
+        </button>
+        <button
+          onClick={() => setStatusFilter('PENDING_VERIFICATION')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            statusFilter === 'PENDING_VERIFICATION'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'bg-white text-amber-700 hover:bg-amber-50 border border-amber-200'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          Pending Verification
+          {pendingCount > 0 && (
+            <span
+              className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                statusFilter === 'PENDING_VERIFICATION'
+                  ? 'bg-white text-amber-700'
+                  : 'bg-amber-600 text-white'
+              }`}
+            >
+              {pendingCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -247,10 +341,16 @@ export default function DepositsPage() {
           <div className="md:hidden space-y-3">
             {deposits.map((d) => {
               const flatNo = d.contributor.flat?.altName || d.contributor.flat?.displayName?.replace('-', '');
+              const isPending = d.status === 'PENDING_VERIFICATION';
+
               return (
                 <div
                   key={d.id}
-                  className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-2.5"
+                  className={`bg-white p-4 rounded-2xl border shadow-sm space-y-2.5 transition-all ${
+                    isPending
+                      ? 'border-amber-300 bg-gradient-to-br from-amber-50/50 via-white to-white ring-1 ring-amber-300/60'
+                      : 'border-gray-200'
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -267,14 +367,36 @@ export default function DepositsPage() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                        {isPending ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> Pending Approval
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                            <Check className="w-3 h-3" /> Verified
+                          </span>
+                        )}
+
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70">
                           {d.festival || 'Ganesh Festival'}
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
                           {d.paymentMethod}
                         </span>
+                        {d.paymentAccount && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded">
+                            {d.paymentAccount.name}
+                          </span>
+                        )}
                       </div>
+
+                      {d.utrNumber && (
+                        <div className="mt-1 text-[11px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded inline-block">
+                          UTR: <strong className="text-stone-900">{d.utrNumber}</strong>
+                        </div>
+                      )}
                     </div>
 
                     <span className="text-lg font-black text-emerald-600">
@@ -286,18 +408,35 @@ export default function DepositsPage() {
 
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                     <div className="text-gray-500">
-                      {formatDate(d.receivedDate)} • Received by:{' '}
-                      <span className="font-bold text-gray-800">{d.receivedByUser.name}</span>
+                      {formatDate(d.receivedDate)} •{' '}
+                      {isPending ? (
+                        <span className="text-amber-700 font-medium">Awaiting Committee Approval</span>
+                      ) : (
+                        <span>
+                          Verified by: <strong className="text-gray-800">{d.receivedByUser?.name || 'Admin'}</strong>
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {isPending && isAuthenticated && (
+                        <button
+                          onClick={() => handleApprove(d.id)}
+                          disabled={approvingId === d.id}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg shadow-sm active:scale-95 disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {approvingId === d.id ? 'Approving...' : 'Approve'}
+                        </button>
+                      )}
+
                       {d.attachments?.length > 0 && (
                         <button
                           onClick={() => setLightboxAttachment(d.attachments[0])}
                           className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"
                         >
                           <Paperclip className="w-3.5 h-3.5" />
-                          View Attachment
+                          View
                         </button>
                       )}
 
@@ -323,12 +462,13 @@ export default function DepositsPage() {
               <thead className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Status</th>
                   <th className="px-5 py-3.5">Festival</th>
                   <th className="px-5 py-3.5">Donor / Contributor</th>
                   <th className="px-5 py-3.5">Flat / Source</th>
-                  <th className="px-5 py-3.5">Method</th>
+                  <th className="px-5 py-3.5">Method & Account</th>
                   <th className="px-5 py-3.5">Amount</th>
-                  <th className="px-5 py-3.5">Received By</th>
+                  <th className="px-5 py-3.5">Verified / Received By</th>
                   <th className="px-5 py-3.5">Attachment</th>
                   {isAuthenticated && <th className="px-5 py-3.5 text-right">Action</th>}
                 </tr>
@@ -336,10 +476,30 @@ export default function DepositsPage() {
               <tbody className="divide-y divide-gray-100">
                 {deposits.map((d) => {
                   const flatNo = d.contributor.flat?.altName || d.contributor.flat?.displayName?.replace('-', '');
+                  const isPending = d.status === 'PENDING_VERIFICATION';
+
                   return (
-                    <tr key={d.id} className="hover:bg-gray-50/60 transition-colors">
+                    <tr
+                      key={d.id}
+                      className={`hover:bg-gray-50/60 transition-colors ${
+                        isPending ? 'bg-amber-50/30' : ''
+                      }`}
+                    >
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap font-medium text-xs">
                         {formatDate(d.receivedDate)}
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        {isPending ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            Verified
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-900 border border-rose-200">
@@ -347,22 +507,36 @@ export default function DepositsPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 font-bold text-gray-900">
-                        {d.donorName || d.contributor.name}
+                        <div>{d.donorName || d.contributor.name}</div>
+                        {d.utrNumber && (
+                          <div className="text-[11px] font-mono text-stone-500">
+                            UTR: <span className="font-semibold text-stone-800">{d.utrNumber}</span>
+                          </div>
+                        )}
                         {d.notes && <p className="text-xs text-gray-400 font-normal italic">{d.notes}</p>}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap text-xs font-semibold text-gray-700">
                         {flatNo ? `Flat ${flatNo}` : d.contributor.name}
                       </td>
-                      <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-xs">
+                        <span className="inline-block px-2 py-0.5 font-semibold rounded bg-gray-100 text-gray-800 mr-1.5">
                           {d.paymentMethod}
                         </span>
+                        {d.paymentAccount && (
+                          <span className="inline-block px-2 py-0.5 font-medium rounded bg-purple-50 text-purple-700 border border-purple-200">
+                            {d.paymentAccount.name}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 font-black text-emerald-700 whitespace-nowrap">
                         +{formatCurrency(d.amount)}
                       </td>
-                      <td className="px-5 py-3.5 text-xs font-semibold text-gray-800 whitespace-nowrap">
-                        {d.receivedByUser.name}
+                      <td className="px-5 py-3.5 text-xs font-semibold whitespace-nowrap">
+                        {d.receivedByUser?.name ? (
+                          <span className="text-gray-800">{d.receivedByUser?.name}</span>
+                        ) : (
+                          <span className="text-amber-600 font-medium">Awaiting Verification</span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         {d.attachments?.length > 0 ? (
@@ -371,7 +545,7 @@ export default function DepositsPage() {
                             className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200"
                           >
                             <Paperclip className="w-3 h-3" />
-                            View Attachment
+                            View
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400">-</span>
@@ -379,6 +553,17 @@ export default function DepositsPage() {
                       </td>
                       {isAuthenticated && (
                         <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                          {isPending && (
+                            <button
+                              onClick={() => handleApprove(d.id)}
+                              disabled={approvingId === d.id}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50 mr-2"
+                              title="Approve this online deposit into General Ledger"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              {approvingId === d.id ? 'Approving...' : 'Approve'}
+                            </button>
+                          )}
                           <button
                             onClick={() => setDeleteItem(d)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -413,6 +598,13 @@ export default function DepositsPage() {
           loading={deleting}
         />
       )}
+
+      {/* Share Flat Payment Link & QR Modal */}
+      <ShareFlatLinkModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        defaultFestival={selectedFestival !== 'all' ? selectedFestival : 'Ganesh Festival'}
+      />
     </div>
   );
 }

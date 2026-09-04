@@ -55,6 +55,7 @@ export async function GET(request: Request) {
         enteredByUser: {
           select: { id: true, name: true, username: true, role: true },
         },
+        paymentAccount: true,
         attachments: true,
       },
     });
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
   try {
     const user = await requireAuth();
     const body = await request.json();
-    const { festival, expenseCategory, description, amount, paymentMethod, paidTo, expenseDate, notes, attachment } = body;
+    const { festival, expenseCategory, description, amount, paymentMethod, paymentAccountId, paidTo, expenseDate, notes, attachment } = body;
 
     if (!expenseCategory) {
       return NextResponse.json({ error: 'Expense Category is required.' }, { status: 400 });
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
         description: description.trim(),
         amount: parsedAmount,
         paymentMethod,
+        paymentAccountId: paymentAccountId || null,
         paidTo: paidTo.trim(),
         expenseDate: dateVal,
         enteredByUserId: user.id,
@@ -120,12 +122,15 @@ export async function POST(request: Request) {
           : undefined,
       },
       include: {
-        enteredByUser: { select: { id: true, name: true, username: true } },
+        enteredByUser: {
+          select: { id: true, name: true, username: true, role: true },
+        },
+        paymentAccount: true,
         attachments: true,
       },
     });
 
-    return NextResponse.json({ success: true, expense });
+    return NextResponse.json({ expense });
   } catch (error: any) {
     if (error.message === 'UNAUTHORIZED') {
       return NextResponse.json({ error: 'Please login to add expenses.' }, { status: 401 });

@@ -14,10 +14,15 @@ export async function GET(request: Request) {
     const flatIdParam = searchParams.get('flatId');
     const festivalParam = searchParams.get('festival');
     const fyParam = searchParams.get('fy');
+    const statusParam = searchParams.get('status');
 
     const where: any = {
       deletedAt: null,
     };
+
+    if (statusParam && statusParam !== 'all') {
+      where.status = statusParam;
+    }
 
     if (festivalParam && festivalParam !== 'all') {
       where.festival = festivalParam;
@@ -48,28 +53,38 @@ export async function GET(request: Request) {
         { donorName: { contains: q } },
         { contributor: { name: { contains: q } } },
         { notes: { contains: q } },
+        { utrNumber: { contains: q } },
         { paymentMethod: { contains: q } },
         { receivedByUser: { name: { contains: q } } },
       ];
     }
 
-    const deposits = await prisma.deposit.findMany({
-      where,
-      orderBy: { receivedDate: 'desc' },
-      include: {
-        contributor: {
-          include: {
-            flat: { select: { id: true, floor: true, flatNumber: true, displayName: true, altName: true } },
+    const [deposits, pendingCount] = await Promise.all([
+      prisma.deposit.findMany({
+        where,
+        orderBy: { receivedDate: 'desc' },
+        include: {
+          contributor: {
+            include: {
+              flat: { select: { id: true, floor: true, flatNumber: true, displayName: true, altName: true } },
+            },
           },
+          receivedByUser: {
+            select: { id: true, name: true, username: true, role: true },
+          },
+          paymentAccount: true,
+          attachments: true,
         },
-        receivedByUser: {
-          select: { id: true, name: true, username: true, role: true },
+      }),
+      prisma.deposit.count({
+        where: {
+          status: 'PENDING_VERIFICATION',
+          deletedAt: null,
         },
-        attachments: true,
-      },
-    });
+      }),
+    ]);
 
-    return NextResponse.json({ deposits });
+    return NextResponse.json({ deposits, pendingCount });
   } catch (error: any) {
     console.error('Deposits GET error:', error);
     return NextResponse.json({ error: 'Failed to fetch deposits.' }, { status: 500 });
@@ -89,6 +104,8 @@ export async function POST(request: Request) {
       donorName,
       amount,
       paymentMethod,
+      paymentAccountId,
+      utrNumber,
       receivedDate,
       notes,
       attachment,
@@ -146,6 +163,9 @@ export async function POST(request: Request) {
         donorName: cleanDonorName,
         amount: parsedAmount,
         paymentMethod,
+        status: 'VERIFIED',
+        utrNumber: utrNumber?.trim() || null,
+        paymentAccountId: paymentAccountId || null,
         receivedDate: dateVal,
         receivedByUserId: user.id,
         notes: notes?.trim() || null,
@@ -164,10 +184,13 @@ export async function POST(request: Request) {
       include: {
         contributor: {
           include: {
-            flat: true,
+            flat: { select: { id: true, floor: true, flatNumber: true, displayName: true, altName: true } },
           },
         },
-        receivedByUser: { select: { id: true, name: true, username: true } },
+        receivedByUser: {
+          select: { id: true, name: true, username: true, role: true },
+        },
+        paymentAccount: true,
         attachments: true,
       },
     });

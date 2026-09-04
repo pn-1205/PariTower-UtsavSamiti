@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, TrendingDown } from 'lucide-react';
@@ -18,6 +18,25 @@ export default function AddExpenseModal() {
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [paymentAccountId, setPaymentAccountId] = useState<string>('');
+
+  useEffect(() => {
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/api/payment-accounts');
+        if (res.ok) {
+          const d = await res.json();
+          if (d.accounts) {
+            setAccounts(d.accounts);
+            const def = d.accounts.find((a: any) => a.isDefault) || d.accounts[0];
+            if (def) setPaymentAccountId(def.id);
+          }
+        }
+      } catch (e) {}
+    }
+    if (addExpenseModalOpen) loadAccounts();
+  }, [addExpenseModalOpen]);
 
   // Attachment
   const [attachment, setAttachment] = useState<any>(null);
@@ -86,6 +105,7 @@ export default function AddExpenseModal() {
           amount: parseFloat(amount),
           paidTo: paidTo.trim(),
           paymentMethod,
+          paymentAccountId: paymentAccountId || null,
           expenseDate,
           notes,
           attachment,
@@ -216,6 +236,26 @@ export default function AddExpenseModal() {
               </select>
             </div>
           </div>
+
+          {/* Withdrawn / Paid From Account */}
+          {accounts.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Withdrawn / Paid From Account *
+              </label>
+              <select
+                value={paymentAccountId}
+                onChange={(e) => setPaymentAccountId(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-semibold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white"
+              >
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.accountType === 'UPI_BANK' ? acc.upiId : 'Cash in Hand'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Paid To & Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

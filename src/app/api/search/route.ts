@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         contributorName: d.donorName || d.contributor.name,
         amount: d.amount,
         paymentMethod: d.paymentMethod,
-        user: d.receivedByUser.name,
+        user: d.receivedByUser?.name || 'Online',
       })),
     });
   } catch (error: any) {

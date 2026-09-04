@@ -17,15 +17,20 @@ import {
   BookOpen,
   Menu,
   X,
+  Heart,
+  CreditCard,
 } from 'lucide-react';
+import ManagePaymentAccountsModal from './ManagePaymentAccountsModal';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout, setLoginModalOpen, setAddDepositModalOpen, setAddExpenseModalOpen, setAddDonationModalOpen } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountsModalOpen, setAccountsModalOpen] = useState(false);
 
   const navLinks = [
     { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Donate', href: '/donate', icon: Heart },
     { name: 'Money Received', href: '/deposits', icon: DollarSign },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Donations', href: '/donations', icon: Gift },
@@ -56,11 +61,29 @@ export default function Navbar() {
 
           {/* Right Action: Auth & Quick Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Donate Quick Action Button */}
+            <Link
+              href="/donate"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white rounded-xl shadow-sm transition-all active:scale-95"
+            >
+              <Heart className="w-3.5 h-3.5 fill-white" />
+              Donate
+            </Link>
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 {/* Add Actions Desktop Buttons */}
                 <div className="hidden sm:flex items-center gap-1.5">
+                  {isAdmin && (
+                    <button
+                      onClick={() => setAccountsModalOpen(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg border border-stone-300 transition-colors mr-1"
+                      title="Manage UPI & Cash Accounts"
+                    >
+                      <CreditCard className="w-3.5 h-3.5 text-stone-600" />
+                      Accounts
+                    </button>
+                  )}
                   <button
                     onClick={() => setAddDepositModalOpen(true)}
                     className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition-colors active:scale-95"
@@ -188,8 +211,27 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setAccountsModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-stone-700 hover:bg-stone-100 text-left transition-colors"
+            >
+              <CreditCard className="w-4 h-4 text-stone-600" />
+              Manage Receiving Accounts
+            </button>
+          )}
         </div>
       )}
+
+      {/* Admin Payment Accounts Management Modal */}
+      <ManagePaymentAccountsModal
+        isOpen={accountsModalOpen}
+        onClose={() => setAccountsModalOpen(false)}
+      />
     </header>
   );
 }

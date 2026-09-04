@@ -27,7 +27,7 @@ export async function GET() {
       // 1. Total money received sum
       prisma.deposit.aggregate({
         _sum: { amount: true },
-        where: { deletedAt: null },
+        where: { deletedAt: null, status: 'VERIFIED' },
       }),
       // 2. Total expenses sum
       prisma.expense.aggregate({
@@ -43,7 +43,7 @@ export async function GET() {
         where: {
           isRefugee: false,
           OR: [
-            { contributors: { some: { deposits: { some: { deletedAt: null } } } } },
+            { contributors: { some: { deposits: { some: { deletedAt: null, status: 'VERIFIED' } } } } },
             { contributors: { some: { donations: { some: { deletedAt: null } } } } },
           ],
         },
@@ -51,12 +51,12 @@ export async function GET() {
       // 5. From flats sum
       prisma.deposit.aggregate({
         _sum: { amount: true },
-        where: { deletedAt: null, contributor: { contributorType: 'flat' } },
+        where: { deletedAt: null, status: 'VERIFIED', contributor: { contributorType: 'flat' } },
       }),
       // 6. From others sum
       prisma.deposit.aggregate({
         _sum: { amount: true },
-        where: { deletedAt: null, contributor: { contributorType: 'other' } },
+        where: { deletedAt: null, status: 'VERIFIED', contributor: { contributorType: 'other' } },
       }),
       // 7. Expense categories
       prisma.expense.groupBy({
@@ -81,6 +81,7 @@ export async function GET() {
       prisma.deposit.findMany({
         where: {
           deletedAt: null,
+          status: 'VERIFIED',
           receivedDate: { gte: twoMonthsAgo },
         },
         orderBy: { receivedDate: 'desc' },
@@ -142,7 +143,7 @@ export async function GET() {
           ? `${dep.donorName} (${dep.contributor.name})`
           : dep.contributor.name,
         amount: dep.amount,
-        details: `${dep.paymentMethod} • Handled by ${dep.receivedByUser.name}`,
+        details: `${dep.paymentMethod} • Handled by ${dep.receivedByUser?.name || 'Online / Verified'}`,
         notes: dep.notes,
         attachments: dep.attachments,
       });

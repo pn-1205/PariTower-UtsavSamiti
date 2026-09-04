@@ -29,6 +29,8 @@ export default function AddDepositModal() {
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [paymentAccountId, setPaymentAccountId] = useState<string>('');
 
   // Attachment
   const [attachment, setAttachment] = useState<any>(null);
@@ -50,9 +52,10 @@ export default function AddDepositModal() {
 
   const fetchFlatsAndContributors = async () => {
     try {
-      const [flatsRes, contribRes] = await Promise.all([
+      const [flatsRes, contribRes, accRes] = await Promise.all([
         fetch('/api/flats'),
         fetch('/api/contributors?type=other'),
+        fetch('/api/payment-accounts'),
       ]);
       if (flatsRes.ok) {
         const d = await flatsRes.json();
@@ -61,6 +64,14 @@ export default function AddDepositModal() {
       if (contribRes.ok) {
         const cd = await contribRes.json();
         setOtherContributors(cd.contributors || []);
+      }
+      if (accRes && accRes.ok) {
+        const ad = await accRes.json();
+        if (ad.accounts) {
+          setAccounts(ad.accounts);
+          const def = ad.accounts.find((a: any) => a.isDefault) || ad.accounts[0];
+          if (def) setPaymentAccountId(def.id);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -161,6 +172,7 @@ export default function AddDepositModal() {
           donorName: donorName.trim(),
           amount: parseFloat(amount),
           paymentMethod,
+          paymentAccountId: paymentAccountId || null,
           receivedDate,
           notes,
           attachment,
@@ -433,6 +445,26 @@ export default function AddDepositModal() {
               </select>
             </div>
           </div>
+
+          {/* Deposited Into Account */}
+          {accounts.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                Deposited Into Account *
+              </label>
+              <select
+                value={paymentAccountId}
+                onChange={(e) => setPaymentAccountId(e.target.value)}
+                className="w-full px-3 py-2 text-sm font-semibold text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white"
+              >
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} ({acc.accountType === 'UPI_BANK' ? acc.upiId : 'Cash in Hand'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Date */}
           <div>

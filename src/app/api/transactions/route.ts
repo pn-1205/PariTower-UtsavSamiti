@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const fyParam = searchParams.get('fy');
 
     // Build common filters
-    const depositWhere: any = { deletedAt: null };
+    const depositWhere: any = { deletedAt: null, status: 'VERIFIED' };
     const expenseWhere: any = { deletedAt: null };
     const donationWhere: any = { deletedAt: null };
 
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const [deposits, expenses, donations] = await Promise.all([
+    const [deposits, expenses, donations, paymentAccounts] = await Promise.all([
       typeParam === 'expense' || typeParam === 'donation'
         ? []
         : prisma.deposit.findMany({
@@ -44,6 +44,7 @@ export async function GET(request: Request) {
                 },
               },
               receivedByUser: { select: { id: true, name: true } },
+              paymentAccount: true,
               attachments: true,
             },
           }),
@@ -54,6 +55,7 @@ export async function GET(request: Request) {
             orderBy: { expenseDate: 'desc' },
             include: {
               enteredByUser: { select: { id: true, name: true } },
+              paymentAccount: true,
               attachments: true,
             },
           }),
@@ -72,6 +74,10 @@ export async function GET(request: Request) {
               attachments: true,
             },
           }),
+      prisma.paymentAccount.findMany({
+        where: { isActive: true },
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+      }),
     ]);
 
     let list: any[] = [
@@ -94,7 +100,10 @@ export async function GET(request: Request) {
           category: d.paymentMethod === 'Internal Transfer' ? 'Internal Transfer' : (d.contributor.contributorType === 'flat' ? 'Flat Contribution' : 'External Contributor'),
           amount: d.amount,
           paymentMethod: d.paymentMethod,
-          user: d.receivedByUser.name,
+          accountName: d.paymentAccount?.name || 'Cash in Hand (Treasury)',
+          paymentAccountId: d.paymentAccountId,
+          utrNumber: d.utrNumber,
+          user: d.receivedByUser?.name || 'Verified Online',
           notes: d.notes,
           attachments: d.attachments,
         };
@@ -109,7 +118,9 @@ export async function GET(request: Request) {
         category: e.expenseCategory,
         amount: -e.amount,
         paymentMethod: e.paymentMethod,
-        user: e.enteredByUser.name,
+        accountName: e.paymentAccount?.name || 'Cash in Hand (Treasury)',
+        paymentAccountId: e.paymentAccountId,
+        user: e.enteredByUser?.name || 'System',
         notes: e.notes,
         attachments: e.attachments,
       })),
@@ -133,7 +144,7 @@ export async function GET(request: Request) {
           amount: 0,
           estimatedValue: dn.estimatedValue,
           paymentMethod: dn.donationType,
-          user: dn.receivedByUser.name,
+          user: dn.receivedByUser?.name || 'System',
           notes: dn.description || dn.notes,
           attachments: dn.attachments,
         };
@@ -149,6 +160,7 @@ export async function GET(request: Request) {
           t.party?.toLowerCase().includes(q) ||
           t.category?.toLowerCase().includes(q) ||
           t.notes?.toLowerCase().includes(q) ||
+          t.accountName?.toLowerCase().includes(q) ||
           t.user?.toLowerCase().includes(q) ||
           t.festival?.toLowerCase().includes(q)
       );
@@ -168,6 +180,25 @@ export async function GET(request: Request) {
 
     const netBalance = totalIncome - totalExpense;
 
+    // Calculate per-account custodian balances
+    const custodianBalances = paymentAccounts.map((acc) => {
+      const accInflow = deposits
+        .filter((d) => d.paymentAccountId === acc.id)
+        .reduce((sum, d) => sum + d.amount, 0);
+      const accOutflow = expenses
+        .filter((e) => e.paymentAccountId === acc.id)
+        .reduce((sum, e) => sum + e.amount, 0);
+      return {
+        id: acc.id,
+        name: acc.name,
+        accountType: acc.accountType,
+        upiId: acc.upiId,
+        inflow: accInflow,
+        outflow: accOutflow,
+        balance: accInflow - accOutflow,
+      };
+    });
+
     return NextResponse.json({
       transactions: list,
       totals: {
@@ -176,6 +207,7 @@ export async function GET(request: Request) {
         netBalance,
         count: list.length,
       },
+      custodianBalances,
     });
   } catch (error: any) {
     console.error('Transactions GET error:', error);
