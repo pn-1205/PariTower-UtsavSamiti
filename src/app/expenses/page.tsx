@@ -191,7 +191,7 @@ export default function ExpensesPage() {
           <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
             Total Displayed Expenses
           </span>
-          <p className="text-2xl sm:text-3xl font-black text-rose-950 mt-0.5">
+          <p className="text-2xl sm:text-3xl font-black text-stone-900 mt-0.5">
             {formatCurrency(totalAmount)}
           </p>
         </div>

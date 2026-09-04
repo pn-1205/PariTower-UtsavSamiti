@@ -194,44 +194,21 @@ export default function QuickDonateWidget() {
     'Resident';
 
   // NPCI-compliant parameters
-  const upiPayee = activeAccount.upiId || '9921137881@icici';
+  const upiPayee = (activeAccount.upiId || '9921137881@icici').trim();
   const cleanName = (activeAccount.name || 'Pari Tower Samiti')
     .replace(/[^a-zA-Z0-9 ]/g, '')
     .trim()
     .slice(0, 50);
 
-  const amtStr = finalAmount > 0 ? String(finalAmount) : '351';
+  const amtStr = finalAmount > 0 ? finalAmount.toFixed(2) : '351.00';
   const rawNote = `${selectedFestival} ${effectiveDonorName}`;
   const cleanNote = rawNote.replace(/[^a-zA-Z0-9 ]/g, ' ').trim().slice(0, 30);
 
-  const queryParams = `pa=${encodeURIComponent(upiPayee)}&pn=${encodeURIComponent(cleanName)}&am=${encodeURIComponent(amtStr)}&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
+  // Preserve literal @ in VPA address so mobile apps (GPay, PhonePe, Paytm) parse correctly
+  const queryParams = `pa=${upiPayee}&pn=${encodeURIComponent(cleanName)}&am=${amtStr}&cu=INR&tn=${encodeURIComponent(cleanNote || 'Contribution')}`;
 
-  // 1. Standard Universal UPI URI (opens native OS UPI chooser on Android & iOS)
+  // Standard Universal UPI URI (triggers Android/iOS native app chooser: GPay, PhonePe, Paytm, etc.)
   const universalUpiUri = `upi://pay?${queryParams}`;
-
-  // 2. Direct App Intents (Android) and Custom Schemes (iOS)
-  const gpayLink = isAndroid
-    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end;`
-    : `tez://upi/pay?${queryParams}`;
-
-  const phonepeLink = isAndroid
-    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.phonepe.app;end;`
-    : `phonepe://pay?${queryParams}`;
-
-  const paytmLink = isAndroid
-    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=net.one97.paytm;end;`
-    : `paytmmp://pay?${queryParams}`;
-
-  const bhimLink = isAndroid
-    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=in.org.npci.upiapp;end;`
-    : universalUpiUri;
-
-  const credLink = isAndroid
-    ? `intent://pay?${queryParams}#Intent;scheme=upi;package=com.dreamplug.androidapp;end;`
-    : universalUpiUri;
-
-  // Primary link for universal 1-tap button: standard upi://pay works across Android & iOS
-  const primaryUpiLink = universalUpiUri;
 
   const handleCopyUpi = () => {
     navigator.clipboard.writeText(upiPayee);
@@ -240,20 +217,8 @@ export default function QuickDonateWidget() {
   };
 
   // Launch payment link and asynchronously log pending transaction
-  const handlePayClick = (e: React.MouseEvent<HTMLAnchorElement>, targetUri: string) => {
+  const handlePayClick = (e: React.MouseEvent<HTMLElement>) => {
     setError('');
-
-    // If on desktop browser, inform user to scan QR code
-    if (typeof navigator !== 'undefined') {
-      const ua = navigator.userAgent.toLowerCase();
-      const isMobileDevice = /android|iphone|ipad|ipod|mobile/i.test(ua);
-      if (!isMobileDevice) {
-        e.preventDefault();
-        setShowQrOnMobile(true);
-        setError('💻 You are on a computer. Please scan the QR code to the right with Google Pay, PhonePe, or Paytm on your phone, or copy the UPI ID below.');
-        return;
-      }
-    }
 
     if (finalAmount <= 0) {
       e.preventDefault();
@@ -261,10 +226,11 @@ export default function QuickDonateWidget() {
       return;
     }
 
-    // Display fallback hint on mobile in case the browser blocks custom scheme handlers
-    setAppOpenHint(true);
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+    const isMobile = /android|iphone|ipad|ipod|mobile/i.test(ua);
 
-    // Asynchronously log transaction to database without blocking browser navigation
+    // Asynchronously log transaction to database so it's captured in pending records
+    setSubmitting(true);
     try {
       fetch('/api/donate', {
         method: 'POST',
@@ -281,105 +247,73 @@ export default function QuickDonateWidget() {
           phone: phone.trim() || null,
           notes: notes.trim() || null,
         }),
-      }).catch((err) => console.error('Error logging payment:', err));
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            setSuccessReceipt(data);
+            triggerFestiveConfetti();
+          }
+        })
+        .catch((err) => console.error('Error recording payment:', err))
+        .finally(() => setSubmitting(false));
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  // Manual payment recording (e.g. after QR scan or direct bank transfer)
-  const handleManualRecord = async () => {
-    setError('');
-
-    if (finalAmount <= 0) {
-      setError('Please select or enter an amount greater than ₹0.');
-      return;
-    }
-
-    if (!effectiveDonorName) {
-      setError(
-        donorType === 'flat'
-          ? 'Please enter your Flat number or Name.'
-          : 'Please enter your Name before recording payment.'
-      );
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const res = await fetch('/api/donate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: finalAmount,
-          donorName: effectiveDonorName,
-          festival: selectedFestival,
-          flatId: donorType === 'flat' ? selectedFlatId : null,
-          contributorName: donorType === 'flat' ? null : effectiveDonorName,
-          contributorCategory: donorType === 'flat' ? 'Resident' : 'Well-wisher',
-          paymentAccountId: activeAccount.id,
-          phone: phone.trim() || null,
-          notes: notes.trim() || null,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to record payment.');
-      } else {
-        setSuccessReceipt(data);
-        triggerFestiveConfetti();
-      }
-    } catch (err) {
-      console.error(err);
-      setError('A network error occurred. Please try again.');
-    } finally {
       setSubmitting(false);
     }
+
+    if (!isMobile) {
+      // On desktop, the QR code is available right on screen
+      setShowQrOnMobile(true);
+      return;
+    }
+
+    // On mobile: directly invoke universal UPI URI to open native Android / iOS chooser sheet
+    window.location.href = universalUpiUri;
   };
 
   return (
     <div
       id="donate-section"
-      className="bg-gradient-to-br from-rose-950 via-rose-900 to-amber-950 text-white rounded-3xl shadow-2xl p-5 sm:p-7 border border-amber-500/40 relative overflow-hidden ring-1 ring-amber-400/20"
+      className="bg-white rounded-3xl shadow-sm hover:shadow-md transition-all p-5 sm:p-7 border border-stone-200/90 relative overflow-hidden ring-1 ring-stone-900/5"
     >
-      {/* Magic UI Border Beam animated aura */}
-      <BorderBeam size={320} duration={12} borderWidth={2} colorFrom="#f59e0b" colorTo="#ef4444" />
+      {/* Magic UI Border Beam animated aura with subtle festive amber/gold */}
+      <BorderBeam size={280} duration={14} borderWidth={1.5} colorFrom="#f59e0b" colorTo="#d97706" />
 
-      {/* Subtle sacred gold background glow */}
-      <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Subtle warm ambient glows */}
+      <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/[0.04] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-stone-500/[0.03] rounded-full blur-3xl pointer-events-none" />
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-rose-800/60 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-stone-100 relative z-10">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 text-[11px] font-extrabold uppercase tracking-widest mb-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-            Pari Tower Festival Contribution & Donation
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] font-extrabold uppercase tracking-wider mb-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+            Pari Tower Festival Contribution
           </div>
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            Pay Online via UPI & Instant Approval
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 flex items-center gap-2">
+            Online Contribution via UPI
           </h2>
-          <p className="text-xs text-rose-200/90 mt-0.5">
-            100% direct bank-to-bank contribution with 0% gateway commission.
+          <p className="text-xs text-stone-500 mt-0.5">
+            Direct bank-to-bank contribution • 0% gateway commission • Verified by Samiti
           </p>
         </div>
 
-        {/* SmoothUI Receiver Account Badge with Live Status Indicator */}
-        <div className="bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-amber-400/30 text-xs shadow-inner">
+        {/* Receiver Account Badge */}
+        <div className="bg-stone-50 border border-stone-200/90 px-3.5 py-2 rounded-2xl text-xs shadow-2xs">
           <div className="flex items-center justify-between gap-2 mb-0.5">
-            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
-              Official Receiving Account:
+            <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
+              Receiving Custodian:
             </span>
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
           </div>
-          <span className="font-extrabold text-white text-sm block">
+          <span className="font-extrabold text-stone-900 text-sm block">
             {activeAccount.name}
           </span>
-          <span className="text-[11px] text-amber-200 block font-mono">
+          <span className="text-[11px] text-amber-700 block font-mono font-bold">
             {activeAccount.upiId || 'Direct UPI'}
           </span>
         </div>
@@ -388,50 +322,50 @@ export default function QuickDonateWidget() {
       {/* Success Modal / Acknowledgment */}
       {successReceipt ? (
         <div className="py-8 text-center space-y-4 animate-in fade-in-0 duration-200">
-          <div className="w-16 h-16 bg-emerald-500/20 text-emerald-300 rounded-full flex items-center justify-center mx-auto border border-emerald-400/50">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border border-emerald-200 shadow-xs">
             <CheckCircle2 className="w-10 h-10" />
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-2xl font-black text-amber-200">Payment Logged, {donorName}!</h3>
-            <p className="text-sm text-rose-100 max-w-md mx-auto">
-              Your contribution of <strong className="text-emerald-300">{formatCurrency(finalAmount)}</strong> for{' '}
-              <strong className="text-amber-200">{selectedFestival}</strong> has been recorded!
+            <h3 className="text-2xl font-black text-stone-900">Contribution Initiated!</h3>
+            <p className="text-sm text-stone-600 max-w-md mx-auto">
+              Your contribution of <strong className="text-emerald-700">{formatCurrency(finalAmount)}</strong> for{' '}
+              <strong className="text-amber-800">{selectedFestival}</strong> has been logged.
             </p>
           </div>
 
           {/* Receipt Info Card */}
-          <div className="bg-black/40 border border-amber-400/30 max-w-sm mx-auto p-4 rounded-2xl text-left text-xs space-y-2 font-mono text-rose-200">
-            <div className="flex justify-between pb-1.5 border-b border-white/10">
-              <span className="text-stone-400">Receipt No:</span>
-              <span className="font-bold text-white">{successReceipt.receiptNo}</span>
+          <div className="bg-stone-50 border border-stone-200/90 max-w-sm mx-auto p-4 rounded-2xl text-left text-xs space-y-2 font-mono text-stone-700 shadow-xs">
+            <div className="flex justify-between pb-1.5 border-b border-stone-200">
+              <span className="text-stone-500">Reference No:</span>
+              <span className="font-bold text-stone-900">{successReceipt.receiptNo || 'PTR-' + Math.floor(100000 + Math.random() * 900000)}</span>
             </div>
-            <div className="flex justify-between pb-1.5 border-b border-white/10">
-              <span className="text-stone-400">Contributor:</span>
-              <span className="font-bold text-white">
-                {donorName} {flatNumberInput ? `(Flat ${flatNumberInput})` : ''}
+            <div className="flex justify-between pb-1.5 border-b border-stone-200">
+              <span className="text-stone-500">Contributor:</span>
+              <span className="font-bold text-stone-900">
+                {effectiveDonorName} {flatNumberInput ? `(Flat ${flatNumberInput})` : ''}
               </span>
             </div>
-            <div className="flex justify-between pb-1.5 border-b border-white/10">
-              <span className="text-stone-400">Time of Payment:</span>
-              <span className="font-bold text-amber-300">
-                {successReceipt.recordedTime || new Date().toLocaleTimeString('en-IN')}, {successReceipt.recordedDate || new Date().toLocaleDateString('en-GB')}
+            <div className="flex justify-between pb-1.5 border-b border-stone-200">
+              <span className="text-stone-500">Date & Time:</span>
+              <span className="font-bold text-stone-900">
+                {new Date().toLocaleTimeString('en-IN')}, {new Date().toLocaleDateString('en-GB')}
               </span>
             </div>
-            <div className="flex justify-between pb-1.5 border-b border-white/10">
-              <span className="text-stone-400">Paid To:</span>
-              <span className="font-bold text-white">{activeAccount.name}</span>
+            <div className="flex justify-between pb-1.5 border-b border-stone-200">
+              <span className="text-stone-500">Paid To:</span>
+              <span className="font-bold text-stone-900">{activeAccount.name}</span>
             </div>
             <div className="flex justify-between items-center pt-1">
-              <span className="text-stone-400">Status:</span>
-              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 font-bold rounded-full border border-amber-500/40 text-[10px]">
+              <span className="text-stone-500">Status:</span>
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-800 font-bold rounded-full border border-amber-200 text-[10px]">
                 Pending Committee Verification
               </span>
             </div>
           </div>
 
-          <p className="text-[11px] text-rose-200/90 max-w-md mx-auto italic">
-            No UTR number needed! The committee member will check their bank/UPI app statement for your Name, Amount, and Time of payment to verify it into the General Ledger.
+          <p className="text-[11px] text-stone-500 max-w-md mx-auto italic">
+            No UTR submission needed! The committee matches your payment on their bank/UPI app statement by Name, Amount, and Timestamp.
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-2">
@@ -441,7 +375,7 @@ export default function QuickDonateWidget() {
                 setSuccessReceipt(null);
                 setDonorName('');
               }}
-              className="px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all"
+              className="px-5 py-2.5 bg-stone-900 hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-xs"
             >
               + Make Another Contribution
             </button>
@@ -451,8 +385,9 @@ export default function QuickDonateWidget() {
         /* Main Interactive Donation Form */
         <div className="mt-5 space-y-4">
           {error && (
-            <div className="p-3 text-xs bg-red-950/80 text-red-200 rounded-xl border border-red-500/50 font-semibold">
-              {error}
+            <div className="p-3 text-xs bg-red-50 text-red-700 rounded-xl border border-red-200 font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -461,29 +396,29 @@ export default function QuickDonateWidget() {
             {/* Festival Custom Dropdown */}
             <div className="relative" ref={festivalDropdownRef}>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider">
+                <label className="block text-[11px] font-extrabold text-stone-700 uppercase tracking-wider">
                   Festival / Event *
                 </label>
-                <span className="text-[10px] text-amber-200/70 font-medium">Select utsav celebration</span>
+                <span className="text-[10px] text-stone-400 font-medium">Select celebration</span>
               </div>
               <button
                 type="button"
                 onClick={() => setFestivalDropdownOpen(!festivalDropdownOpen)}
-                className="w-full text-xs font-bold px-3.5 py-2.5 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-amber-400/50 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none flex items-center justify-between transition-all shadow-inner"
+                className="w-full text-xs font-bold px-3.5 py-2.5 bg-stone-50 hover:bg-stone-100 border border-stone-300 hover:border-amber-500 text-stone-900 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none flex items-center justify-between transition-all shadow-2xs"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                   <span className="truncate">{selectedFestival}</span>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 text-stone-300 transition-transform duration-200 flex-shrink-0 ${
-                    festivalDropdownOpen ? 'rotate-180 text-amber-400' : ''
+                  className={`w-4 h-4 text-stone-400 transition-transform duration-200 flex-shrink-0 ${
+                    festivalDropdownOpen ? 'rotate-180 text-amber-600' : ''
                   }`}
                 />
               </button>
 
               {festivalDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-stone-900/95 backdrop-blur-xl border border-amber-500/30 rounded-xl shadow-2xl p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-stone-200 rounded-xl shadow-xl p-1.5 space-y-0.5 max-h-60 overflow-y-auto">
                   {festivals.map((f) => {
                     const isFestSelected = selectedFestival === f;
                     return (
@@ -496,12 +431,12 @@ export default function QuickDonateWidget() {
                         }}
                         className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold flex items-center justify-between transition-all ${
                           isFestSelected
-                            ? 'bg-amber-400 text-rose-950 font-black shadow-sm'
-                            : 'text-stone-200 hover:bg-white/10 hover:text-white'
+                            ? 'bg-amber-50 text-amber-900 font-black border border-amber-200 shadow-2xs'
+                            : 'text-stone-700 hover:bg-stone-50 hover:text-stone-900'
                         }`}
                       >
                         <span>{f}</span>
-                        {isFestSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        {isFestSelected && <Check className="w-3.5 h-3.5 text-amber-600 stroke-[3]" />}
                       </button>
                     );
                   })}
@@ -512,10 +447,10 @@ export default function QuickDonateWidget() {
             {/* Receiving Account 2-Option Card Selector */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider">
+                <label className="block text-[11px] font-extrabold text-stone-700 uppercase tracking-wider">
                   Payee Account (Receiver) *
                 </label>
-                <span className="text-[10px] text-amber-200/80 font-semibold">100% direct committee receiver</span>
+                <span className="text-[10px] text-stone-400 font-semibold">100% direct committee receiver</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {accounts.map((acc) => {
@@ -527,29 +462,29 @@ export default function QuickDonateWidget() {
                       onClick={() => setSelectedAccountId(acc.id)}
                       className={`relative text-left p-3 rounded-xl border transition-all duration-200 flex items-start gap-2.5 ${
                         isSelected
-                          ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/40'
-                          : 'bg-white/5 border-white/10 text-stone-300 hover:bg-white/10 hover:border-white/20'
+                          ? 'bg-amber-50/50 border-amber-500 text-stone-900 shadow-xs ring-1 ring-amber-500/20'
+                          : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50 hover:border-stone-300'
                       }`}
                     >
                       <div
                         className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
                           isSelected
-                            ? 'border-amber-400 bg-amber-400 text-rose-950'
-                            : 'border-stone-500 bg-transparent'
+                            ? 'border-amber-600 bg-amber-600 text-white'
+                            : 'border-stone-300 bg-transparent'
                         }`}
                       >
                         {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-black truncate text-white">{acc.name}</span>
+                          <span className="text-xs font-black truncate text-stone-900">{acc.name}</span>
                           {acc.isDefault && (
-                            <span className="text-[9px] px-1.5 py-0.5 bg-amber-400/30 text-amber-300 rounded font-bold border border-amber-400/40 flex-shrink-0">
+                            <span className="text-[9px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded font-bold border border-amber-200 flex-shrink-0">
                               Default
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-amber-200 font-mono font-bold tracking-tight truncate mt-0.5">
+                        <div className="text-[11px] text-amber-700 font-mono font-bold tracking-tight truncate mt-0.5">
                           {acc.upiId}
                         </div>
                         {acc.bankName && (
@@ -566,10 +501,10 @@ export default function QuickDonateWidget() {
           </div>
 
           {/* Row 2: Donor Type, Flat & Donor Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-black/20 p-3.5 rounded-2xl border border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-stone-50/80 p-3.5 rounded-2xl border border-stone-200/80">
             {/* Donor Type */}
             <div className="sm:col-span-3">
-              <label className="block text-[10px] font-bold text-stone-300 uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 Contributor Type
               </label>
               <div className="flex gap-1">
@@ -578,8 +513,8 @@ export default function QuickDonateWidget() {
                   onClick={() => setDonorType('flat')}
                   className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                     donorType === 'flat'
-                      ? 'bg-amber-400 text-rose-950 shadow-sm'
-                      : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
                   }`}
                 >
                   <Building2 className="w-3 h-3" />
@@ -590,8 +525,8 @@ export default function QuickDonateWidget() {
                   onClick={() => setDonorType('other')}
                   className={`flex-1 py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                     donorType === 'other'
-                      ? 'bg-amber-400 text-rose-950 shadow-sm'
-                      : 'bg-white/10 text-stone-300 hover:bg-white/20'
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-white text-stone-600 hover:bg-stone-100 border border-stone-200'
                   }`}
                 >
                   <User className="w-3 h-3" />
@@ -603,7 +538,7 @@ export default function QuickDonateWidget() {
             {/* Flat Selection (if Resident) */}
             {donorType === 'flat' && (
               <div className="sm:col-span-3">
-                <label className="block text-[10px] font-bold text-stone-300 uppercase tracking-wider mb-1">
+                <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                   Flat Number *
                 </label>
                 <input
@@ -612,14 +547,14 @@ export default function QuickDonateWidget() {
                   placeholder="e.g. 808 or 1204"
                   value={flatNumberInput}
                   onChange={(e) => handleFlatInputChange(e.target.value)}
-                  className="w-full text-xs font-bold px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                  className="w-full text-xs font-bold px-3 py-2 bg-white border border-stone-300 text-stone-900 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
                 />
               </div>
             )}
 
             {/* Donor Full Name */}
             <div className={donorType === 'flat' ? 'sm:col-span-3' : 'sm:col-span-5'}>
-              <label className="block text-[10px] font-bold text-stone-300 uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 Donor Full Name *
               </label>
               <input
@@ -628,13 +563,13 @@ export default function QuickDonateWidget() {
                 placeholder="Enter full name"
                 value={donorName}
                 onChange={(e) => setDonorName(e.target.value)}
-                className="w-full text-xs font-bold px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                className="w-full text-xs font-bold px-3 py-2 bg-white border border-stone-300 text-stone-900 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
               />
             </div>
 
             {/* WhatsApp / Phone */}
             <div className={donorType === 'flat' ? 'sm:col-span-3' : 'sm:col-span-4'}>
-              <label className="block text-[10px] font-bold text-stone-300 uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-bold text-stone-600 uppercase tracking-wider mb-1">
                 WhatsApp Phone (Optional)
               </label>
               <input
@@ -642,14 +577,14 @@ export default function QuickDonateWidget() {
                 placeholder="10-digit mobile"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full text-xs font-semibold px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                className="w-full text-xs font-semibold px-3 py-2 bg-white border border-stone-300 text-stone-900 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Row 3: Amount Selection Chips */}
           <div>
-            <label className="block text-[11px] font-extrabold text-amber-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-extrabold text-stone-700 uppercase tracking-wider mb-1.5">
               Select Amount (INR) *
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -663,8 +598,8 @@ export default function QuickDonateWidget() {
                   }}
                   className={`text-xs font-black px-4 py-2 rounded-xl transition-all ${
                     amount === preset
-                      ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-rose-950 shadow-md scale-105 ring-2 ring-amber-300'
-                      : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                      ? 'bg-stone-900 text-white shadow-xs scale-105 ring-2 ring-stone-900/10'
+                      : 'bg-stone-100 hover:bg-stone-200/80 text-stone-800 border border-stone-200/80'
                   }`}
                 >
                   ₹{preset}
@@ -676,8 +611,8 @@ export default function QuickDonateWidget() {
                 onClick={() => setAmount('custom')}
                 className={`text-xs font-black px-3.5 py-2 rounded-xl transition-all ${
                   amount === 'custom'
-                    ? 'bg-amber-400 text-rose-950 shadow-md ring-2 ring-amber-300'
-                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                    ? 'bg-stone-900 text-white shadow-xs ring-2 ring-stone-900/10'
+                    : 'bg-stone-100 hover:bg-stone-200/80 text-stone-800 border border-stone-200/80'
                 }`}
               >
                 Custom Amount
@@ -685,187 +620,82 @@ export default function QuickDonateWidget() {
 
               {amount === 'custom' && (
                 <div className="relative flex-1 min-w-[120px]">
-                  <span className="absolute left-3 top-2 text-xs font-bold text-amber-300">₹</span>
+                  <span className="absolute left-3 top-2 text-xs font-bold text-stone-500">₹</span>
                   <input
                     type="number"
                     min="1"
                     placeholder="Enter amount"
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full pl-7 pr-3 py-1.5 text-xs font-black bg-white/15 border border-amber-400/60 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-300"
+                    className="w-full pl-7 pr-3 py-1.5 text-xs font-black bg-white border border-stone-300 rounded-xl text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
                   />
                 </div>
               )}
             </div>
           </div>
 
-          {/* Row 4: Instant UPI App Payment & Dynamic QR */}
-          <div className="bg-black/30 p-4 rounded-2xl border border-amber-400/30 flex flex-col md:flex-row items-center justify-between gap-5">
-            {/* Left: Mobile 1-Tap Buttons & UPI Copy */}
-            <div className="space-y-3 w-full md:flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-amber-300 uppercase tracking-wider flex items-center gap-1">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  Instant Payment (Mobile UPI)
-                </span>
-                <span className="text-xs font-black text-amber-200">
-                  Amount: {formatCurrency(finalAmount)}
-                </span>
-              </div>
-
-              {/* Inline validation error display right above buttons */}
-              {error && (
-                <div className="p-2.5 text-xs bg-red-950/90 text-red-200 rounded-xl border border-red-500/60 font-bold flex items-center gap-2 animate-in fade-in-0 duration-200">
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Main Universal 1-Tap Intent Link with Shimmer Effect */}
-              <a
-                href={primaryUpiLink}
-                onClick={(e) => handlePayClick(e, primaryUpiLink)}
-                className="w-full flex items-center justify-center gap-2.5 py-4 px-4 shimmer-bg hover:brightness-105 text-rose-950 font-black text-sm rounded-xl shadow-xl transition-all transform active:scale-95 text-center cursor-pointer select-none ring-2 ring-amber-300/80 shadow-amber-500/20"
-              >
-                <Smartphone className="w-5 h-5 shrink-0 animate-bounce" />
-                <span className="tracking-wide">Pay via UPI App (GPay / PhonePe / Paytm)</span>
-                <ArrowRight className="w-4.5 h-4.5 shrink-0" />
-              </a>
-
-              {/* Help hint if browser or OS blocks automatic UPI app switching */}
-              {appOpenHint && (
-                <div className="p-3 bg-amber-500/15 border border-amber-400/40 rounded-xl text-xs space-y-1.5 animate-in fade-in-0 duration-200">
-                  <div className="flex items-center justify-between font-bold text-amber-300">
-                    <span>📱 UPI App didn't open automatically?</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowQrOnMobile(true)}
-                      className="text-[11px] underline text-white hover:text-amber-200 font-bold"
-                    >
-                      Show QR Code
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-stone-300 leading-relaxed">
-                    • Tap your specific app below (<strong>GPay</strong>, <strong>PhonePe</strong>, or <strong>Paytm</strong>).<br />
-                    • Or copy UPI ID (<strong className="text-amber-200 font-mono">{upiPayee}</strong>) and pay in your app.<br />
-                    • Or scan the QR code using Google Pay or phone camera.
-                  </p>
-                </div>
-              )}
-
-              {/* App-specific shortcuts */}
-              <div>
-                <div className="text-[10px] text-stone-300 font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>Or choose your preferred UPI app:</span>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                  <a
-                    href={gpayLink}
-                    onClick={(e) => handlePayClick(e, gpayLink)}
-                    className="text-center py-2 px-1 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-lg text-[10px] font-bold transition-all border border-white/10 flex items-center justify-center gap-1"
-                  >
-                    🟢 GPay
-                  </a>
-                  <a
-                    href={phonepeLink}
-                    onClick={(e) => handlePayClick(e, phonepeLink)}
-                    className="text-center py-2 px-1 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-lg text-[10px] font-bold transition-all border border-white/10 flex items-center justify-center gap-1"
-                  >
-                    🟣 PhonePe
-                  </a>
-                  <a
-                    href={paytmLink}
-                    onClick={(e) => handlePayClick(e, paytmLink)}
-                    className="text-center py-2 px-1 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-lg text-[10px] font-bold transition-all border border-white/10 flex items-center justify-center gap-1"
-                  >
-                    🔵 Paytm
-                  </a>
-                  <a
-                    href={bhimLink}
-                    onClick={(e) => handlePayClick(e, bhimLink)}
-                    className="text-center py-2 px-1 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-lg text-[10px] font-bold transition-all border border-white/10 flex items-center justify-center gap-1"
-                  >
-                    🇮🇳 BHIM
-                  </a>
-                  <a
-                    href={credLink}
-                    onClick={(e) => handlePayClick(e, credLink)}
-                    className="text-center py-2 px-1 bg-white/10 hover:bg-white/20 active:scale-95 text-white rounded-lg text-[10px] font-bold transition-all border border-white/10 flex items-center justify-center gap-1 col-span-2 sm:col-span-1"
-                  >
-                    🔴 CRED
-                  </a>
-                </div>
-              </div>
-
-              {/* UPI ID copy box */}
-              <div className="flex items-center justify-between bg-black/40 px-3 py-2 rounded-xl border border-white/10 text-xs">
-                <div className="truncate pr-2">
-                  <span className="text-stone-400 text-[10px] block font-medium">
-                    Payee: <strong className="text-white">{activeAccount.name}</strong>
-                  </span>
-                  <span className="font-mono text-amber-200 font-bold text-xs">{upiPayee}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyUpi}
-                  className="px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/40 rounded-lg text-[11px] font-bold flex items-center gap-1 shrink-0 transition-all"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied UPI' : 'Copy UPI ID'}
-                </button>
-              </div>
-
-              {/* Mobile QR & Manual fallback toggle */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setShowQrOnMobile(!showQrOnMobile)}
-                  className="px-3 py-1.5 bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/40 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all md:hidden shadow-sm"
-                >
-                  <QrCode className="w-4 h-4 text-amber-300" />
-                  <span>{showQrOnMobile ? 'Hide QR Code' : 'Scan via QR Code instead'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleManualRecord}
-                  disabled={submitting}
-                  className="text-stone-300 hover:text-white underline font-semibold ml-auto"
-                >
-                  {submitting ? 'Recording...' : '✓ I Have Paid (Record My Payment)'}
-                </button>
-              </div>
-            </div>
-
-            {/* Right: Dynamic QR Code (Always visible on desktop, toggle on mobile) */}
-            <div
-              className={`flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl shadow-xl border-2 border-amber-400 shrink-0 ${
-                showQrOnMobile ? 'block' : 'hidden md:flex'
-              }`}
+          {/* Row 4: Single Universal 1-Tap UPI Action & Dynamic QR */}
+          <div className="space-y-3 pt-1">
+            {/* Direct 1-Tap Universal UPI Payment Button */}
+            <button
+              type="button"
+              onClick={handlePayClick}
+              disabled={submitting}
+              className="w-full flex items-center justify-center gap-2.5 py-4 px-5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black text-sm sm:text-base rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-[0.99] disabled:opacity-60 cursor-pointer"
             >
-              <QRCodeSVG
-                value={universalUpiUri}
-                size={145}
-                level="M"
-                includeMargin={false}
-              />
-              <span className="text-[10px] font-black text-rose-950 mt-2 uppercase tracking-wider">
-                Scan with any UPI App
+              <Smartphone className="w-5 h-5 shrink-0" />
+              <span>
+                {submitting ? 'Recording...' : `Pay ${formatCurrency(finalAmount)} via UPI (Google Pay, PhonePe, Paytm, etc.)`}
               </span>
-              <button
-                type="button"
-                onClick={handleManualRecord}
-                disabled={submitting}
-                className="w-full mt-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5" />
-                {submitting ? 'Recording...' : '✓ I Have Paid'}
-              </button>
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </button>
+
+            {/* Dynamic QR Code & 1-Click Copy Section */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-stone-50/80 rounded-2xl border border-stone-200/80">
+              <div className="space-y-2 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-bold text-stone-900 uppercase tracking-wider">
+                    Scan QR Code with any UPI App
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  Using a computer or another phone? Scan with Google Pay, PhonePe, or Paytm, or copy the UPI ID below.
+                </p>
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-stone-200 text-xs w-full max-w-sm">
+                  <div className="truncate flex-1 min-w-0">
+                    <span className="text-[10px] text-stone-400 block font-medium">UPI ID:</span>
+                    <span className="font-mono text-stone-900 font-bold text-xs truncate block">{upiPayee}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyUpi}
+                    className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300/80 rounded-lg text-[11px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-stone-600" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl shadow-2xs border border-stone-200 shrink-0">
+                <QRCodeSVG
+                  value={universalUpiUri}
+                  size={120}
+                  level="M"
+                  includeMargin={false}
+                />
+                <span className="text-[10px] font-extrabold text-stone-600 mt-2 uppercase tracking-wider">
+                  Scan to Pay {formatCurrency(finalAmount)}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="bg-black/20 p-3 rounded-2xl border border-white/10 text-center">
-            <p className="text-[11px] text-amber-200/90 font-medium">
-              ⚡ <strong>No UTR submission needed!</strong> Clicking payment automatically logs your Name, Flat, Amount, and exact Timestamp. The committee matches this directly on their bank/UPI statement to approve your receipt.
+          <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/70 text-center">
+            <p className="text-[11px] text-stone-600 font-medium">
+              ⚡ <strong>Zero commission • No UTR submission needed:</strong> Clicking pay captures your name, flat, amount, and exact timestamp. The committee verifies against their bank account statement to approve your entry into the ledger.
             </p>
           </div>
         </div>

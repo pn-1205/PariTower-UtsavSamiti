@@ -20,6 +20,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileCode,
+  Download,
   ArrowRightLeft,
   Calendar,
   Sparkles,
@@ -125,7 +126,7 @@ export default function TransactionsPage() {
           <button
             onClick={handlePdfExport}
             disabled={transactions.length === 0}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-900 hover:bg-rose-950 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
             title="Download printable PDF ledger as on date"
           >
             <FileText className="w-4 h-4" />
@@ -138,17 +139,17 @@ export default function TransactionsPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
             title="Download formatted Excel spreadsheet (.xlsx)"
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <Download className="w-4 h-4" />
             Export Excel
           </button>
 
           <button
             onClick={handleCsvExport}
             disabled={transactions.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
-            title="Download raw CSV data"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-700 hover:bg-stone-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95 disabled:opacity-50"
+            title="Download raw CSV file (.csv)"
           >
-            <FileCode className="w-4 h-4 text-rose-900" />
+            <Download className="w-4 h-4" />
             Export CSV
           </button>
         </div>
@@ -164,40 +165,40 @@ export default function TransactionsPage() {
         onOpenTransferModal={() => setTransferFundModalOpen(true)}
       />
 
-      {/* FILTERED FINANCIAL SUMMARY CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-700">
-            <span>Money Received</span>
+      {/* Summary Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
+            <span>Total Inflow</span>
             <ArrowUpRight className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-black text-gray-900 mt-2">
+          <div className="text-2xl font-black text-stone-900 mt-2">
             {formatCurrency(summaryData.totalReceived)}
           </div>
-          <div className="text-[11px] text-gray-400 mt-0.5">
+          <div className="text-[11px] text-stone-500 mt-0.5">
             {selectedFestival === 'all' ? 'All festivals' : selectedFestival} • {selectedFy === 'all' ? 'All years' : `FY ${selectedFy}`}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-rose-100 relative overflow-hidden">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-700">
-            <span>Expenses Paid</span>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-800">
+            <span>Total Outflow</span>
             <ArrowDownRight className="w-4 h-4 text-rose-600" />
           </div>
-          <div className="text-2xl font-black text-gray-900 mt-2">
+          <div className="text-2xl font-black text-stone-900 mt-2">
             {formatCurrency(summaryData.totalExpenses)}
           </div>
-          <div className="text-[11px] text-gray-400 mt-0.5">
+          <div className="text-[11px] text-stone-500 mt-0.5">
             {selectedFestival === 'all' ? 'All festivals' : selectedFestival} • {selectedFy === 'all' ? 'All years' : `FY ${selectedFy}`}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-950 via-rose-900 to-rose-800 text-white p-4 rounded-2xl shadow-md border border-rose-700/30 relative overflow-hidden">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-200">
+        <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-800 relative overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-300">
             <span>Net Balance</span>
-            <span className="text-[10px] bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] bg-white/10 text-amber-300 px-2 py-0.5 rounded-full font-bold">
               Filtered Cash
             </span>
           </div>

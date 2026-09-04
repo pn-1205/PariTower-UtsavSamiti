@@ -29,7 +29,7 @@ function DonatePageContent() {
           100% Financial Transparency
         </div>
         <p>
-          Every contribution paid via UPI is transferred directly into the designated committee member bank account with 0% gateway commission. Once verified with the bank reference (UTR), it is published to the public General Ledger.
+          Every contribution paid via UPI is transferred directly into the designated committee member bank account with 0% gateway commission. Once matched with the bank transaction record by amount, time, and name, it is approved into the public General Ledger.
         </p>
       </div>
     </div>

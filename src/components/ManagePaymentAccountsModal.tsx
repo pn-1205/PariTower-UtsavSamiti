@@ -153,14 +153,14 @@ export default function ManagePaymentAccountsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150">
       <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-stone-900 p-5 text-white flex items-center justify-between">
+        <div className="bg-slate-900 p-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-400 text-rose-950 rounded-xl">
+            <div className="p-2 bg-amber-500 text-slate-950 rounded-xl">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight">Manage Receiving Accounts & Custodians</h3>
-              <p className="text-[11px] text-amber-200">
+              <p className="text-[11px] text-amber-300">
                 Configure committee members personal UPI accounts and track held balances.
               </p>
             </div>
@@ -169,7 +169,7 @@ export default function ManagePaymentAccountsModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-rose-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+            className="p-1.5 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -194,7 +194,7 @@ export default function ManagePaymentAccountsModal({
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-900 hover:bg-rose-950 text-amber-200 text-xs font-bold rounded-xl shadow-sm transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-black text-amber-300 text-xs font-bold rounded-xl shadow-xs transition-all"
               >
                 <Plus className="w-3.5 h-3.5" />
                 + Add Account
@@ -206,7 +206,7 @@ export default function ManagePaymentAccountsModal({
           {showAddForm && (
             <form onSubmit={handleCreateAccount} className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-3">
               <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                <span className="text-xs font-black text-rose-950">Add Receiving Account / Custodian</span>
+                <span className="text-xs font-black text-stone-900">Add Receiving Account / Custodian</span>
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
@@ -306,7 +306,7 @@ export default function ManagePaymentAccountsModal({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-rose-900 hover:bg-rose-950 text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50"
+                  className="px-5 py-2 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl transition-all disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : 'Save Account'}
                 </button>

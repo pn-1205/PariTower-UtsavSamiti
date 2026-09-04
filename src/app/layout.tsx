@@ -47,7 +47,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-[#faf8f5] text-stone-900 antialiased flex flex-col selection:bg-rose-900 selection:text-amber-100">
+      <body className="min-h-screen bg-[#fafbfc] text-stone-900 antialiased flex flex-col selection:bg-amber-600 selection:text-white">
         <AuthProvider>
           <Navbar />
           <main className="flex-1 pb-6">
@@ -63,7 +63,7 @@ export default function RootLayout({
                   href="https://numendynamics.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-stone-700 hover:text-rose-900 underline underline-offset-2 transition-colors"
+                  className="font-medium text-stone-700 hover:text-amber-800 underline underline-offset-2 transition-colors"
                 >
                   numendynamics.in
                 </a>

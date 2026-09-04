@@ -41,7 +41,7 @@ export default function BottomNav() {
       )}
 
       {/* Bottom Nav Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-gray-200 h-14 flex items-center justify-around px-2 shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur border-t border-stone-200 h-14 flex items-center justify-around px-2 shadow-lg">
         {items.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -50,7 +50,7 @@ export default function BottomNav() {
               key={item.name}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
-                isActive ? 'text-rose-900 font-bold' : 'text-gray-500 hover:text-gray-900'
+                isActive ? 'text-amber-700 font-bold' : 'text-stone-500 hover:text-stone-900'
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />

@@ -81,16 +81,16 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
       {/* MAGIC UI LIVE ANNOUNCEMENT MARQUEE */}
-      <div className="rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 p-1 backdrop-blur-md shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-stone-200/90 bg-white/80 backdrop-blur-md p-1 shadow-2xs overflow-hidden">
         <div className="flex items-center">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-rose-950 text-[11px] font-black uppercase tracking-wider rounded-xl shrink-0 shadow-sm">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-rose-950" />
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] font-extrabold uppercase tracking-wider rounded-xl shrink-0 shadow-2xs">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-amber-700" />
             <span>Live Updates</span>
           </div>
-          <Marquee pauseOnHover={true} className="text-xs font-bold text-stone-800">
+          <Marquee pauseOnHover={true} className="text-xs font-bold text-stone-700">
             <div className="flex items-center gap-6">
-              <span className="flex items-center gap-1.5 text-rose-900 font-extrabold">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span className="flex items-center gap-1.5 text-stone-900 font-extrabold">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                 Pari Tower Ganesh Utsav 2026
               </span>
               <span className="text-stone-300">•</span>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
                 🏛️ Official Custodians: Suryakant Sabale & Rajeshwar Gawali
               </span>
               <span className="text-stone-300">•</span>
-              <span className="flex items-center gap-1 text-amber-700 font-bold">
+              <span className="flex items-center gap-1 text-amber-800 font-bold">
                 🙏 Ganpati Bappa Morya! Mangal Murti Morya!
               </span>
               <span className="text-stone-300">•</span>
@@ -129,16 +129,16 @@ export default function DashboardPage() {
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               Total Money Received
             </span>
-            <div className="p-2.5 bg-emerald-100/70 text-emerald-700 rounded-2xl group-hover:scale-110 transition-transform">
+            <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-2xl group-hover:scale-110 transition-transform border border-emerald-100">
               <ArrowUpRight className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-baseline">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight flex items-baseline">
               <span className="text-xl sm:text-2xl mr-0.5 text-emerald-700 font-bold">₹</span>
-              <NumberTicker value={totalReceived} className="font-black text-gray-950" />
+              <NumberTicker value={totalReceived} className="font-black text-stone-900" />
             </div>
-            <p className="text-[11px] text-gray-500 font-medium mt-1">
+            <p className="text-[11px] text-stone-500 font-medium mt-1">
               From {receivedFromFlats > 0 ? `${receivedFromFlats} residents` : 'flat & online contributors'}
             </p>
           </div>
@@ -152,43 +152,43 @@ export default function DashboardPage() {
               <span className="w-2 h-2 rounded-full bg-rose-500"></span>
               Total Expenses
             </span>
-            <div className="p-2.5 bg-rose-100/70 text-rose-700 rounded-2xl group-hover:scale-110 transition-transform">
+            <div className="p-2.5 bg-rose-50 text-rose-700 rounded-2xl group-hover:scale-110 transition-transform border border-rose-100">
               <ArrowDownRight className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-baseline">
+            <div className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight flex items-baseline">
               <span className="text-xl sm:text-2xl mr-0.5 text-rose-700 font-bold">₹</span>
-              <NumberTicker value={totalExpenses} className="font-black text-gray-950" />
+              <NumberTicker value={totalExpenses} className="font-black text-stone-900" />
             </div>
-            <p className="text-[11px] text-gray-500 font-medium mt-1">
+            <p className="text-[11px] text-stone-500 font-medium mt-1">
               Across verified festival expenses
             </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-rose-600"></div>
         </div>
 
-        {/* Current Balance Bento Card (Hero Balance) */}
-        <div className="bg-gradient-to-br from-rose-950 via-rose-900 to-amber-950 text-white p-5 rounded-3xl shadow-xl shadow-rose-950/20 hover:shadow-2xl transition-all relative overflow-hidden border border-amber-500/30 group">
+        {/* Current Balance Bento Card (Executive Dark Slate with Gold Accent) */}
+        <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-sm hover:shadow-md transition-all relative overflow-hidden border border-slate-800 group">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-200 flex items-center gap-1.5">
+            <span className="text-xs font-extrabold uppercase tracking-wider text-stone-300 flex items-center gap-1.5">
               <Scale className="w-4 h-4 text-amber-400" />
               CURRENT BALANCE
             </span>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-200 border border-amber-300/30 text-[10px] font-bold">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-emerald-400 border border-white/10 text-[10px] font-bold">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
               </span>
-              <span>Net Cash</span>
+              <span>Net In-Hand</span>
             </div>
           </div>
           <div className="mt-4">
             <div className="text-3xl sm:text-4xl font-black tracking-tight text-white flex items-baseline">
-              <span className="text-2xl sm:text-3xl mr-0.5 text-amber-300 font-bold">₹</span>
+              <span className="text-2xl sm:text-3xl mr-0.5 text-amber-400 font-bold">₹</span>
               <NumberTicker value={currentBalance} className="font-black text-white" />
             </div>
-            <p className="text-xs text-rose-100 font-medium mt-1">
+            <p className="text-xs text-stone-400 font-medium mt-1">
               {formatCurrency(totalReceived)} received − {formatCurrency(totalExpenses)} spent
             </p>
           </div>
@@ -199,25 +199,25 @@ export default function DashboardPage() {
 
 
       {/* RECENT FINANCIAL ACTIVITY FEED */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-stone-200">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-100">
           <div>
-            <h3 className="font-bold text-gray-900 text-base sm:text-lg">Recent Activity (Last 2 Months)</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="font-bold text-stone-900 text-base sm:text-lg">Recent Activity (Last 2 Months)</h3>
+            <p className="text-xs text-stone-500">
               Live stream of money received, expenses, and donations from the last 60 days.
             </p>
           </div>
           <Link
             href="/transactions"
-            className="text-xs font-bold text-rose-900 hover:text-rose-950 flex items-center gap-0.5"
+            className="text-xs font-bold text-amber-800 hover:text-amber-900 flex items-center gap-0.5"
           >
             Complete Ledger →
           </Link>
         </div>
 
-        <div className="divide-y divide-gray-100 mt-2">
+        <div className="divide-y divide-stone-100 mt-2">
           {recentActivity.length === 0 ? (
-            <div className="py-10 text-center text-gray-400 text-sm">No activity recorded in the last 2 months.</div>
+            <div className="py-10 text-center text-stone-400 text-sm">No activity recorded in the last 2 months.</div>
           ) : (
             recentActivity.map((item: any) => {
               const isDeposit = item.kind === 'deposit' || item.type === 'deposit';
@@ -226,7 +226,7 @@ export default function DashboardPage() {
               return (
                 <div
                   key={`${item.type || item.kind}-${item.id}`}
-                  className="py-3.5 flex items-start justify-between gap-3 hover:bg-gray-50/60 rounded-xl px-2 transition-colors"
+                  className="py-3.5 flex items-start justify-between gap-3 hover:bg-stone-50/60 rounded-xl px-2 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -249,8 +249,8 @@ export default function DashboardPage() {
 
                     <div>
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <span className="font-bold text-sm text-gray-900">{item.title}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-900 rounded border border-rose-200">
+                        <span className="font-bold text-sm text-stone-900">{item.title}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 text-amber-900 rounded border border-amber-200">
                           {item.festival || 'Ganesh Festival'}
                         </span>
                         <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">

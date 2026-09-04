@@ -82,14 +82,14 @@ export default function TransferFundModal() {
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in-0 duration-200">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-rose-100">
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-800 px-6 py-4 text-white flex items-center justify-between">
+        <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-white/10 rounded-xl">
               <ArrowRightLeft className="w-5 h-5 text-amber-300" />
             </div>
             <div>
               <h3 className="font-bold text-lg leading-tight">Inter-Festival Fund Transfer</h3>
-              <p className="text-xs text-amber-200">Move surplus between festival ledgers</p>
+              <p className="text-xs text-amber-300">Move surplus between festival ledgers</p>
             </div>
           </div>
           <button
@@ -215,7 +215,7 @@ export default function TransferFundModal() {
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 bg-rose-900 hover:bg-rose-950 text-white text-xs font-bold rounded-xl shadow-md shadow-rose-900/20 transition-all disabled:opacity-50 active:scale-95"
+              className="px-5 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 active:scale-95"
             >
               {loading ? 'Processing Transfer...' : 'Complete Transfer'}
             </button>

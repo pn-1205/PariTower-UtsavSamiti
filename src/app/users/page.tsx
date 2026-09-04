@@ -142,7 +142,7 @@ export default function UserManagementPage() {
 
         <button
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-900 hover:bg-rose-950 text-white text-xs font-bold rounded-xl shadow-sm active:scale-95 self-start sm:self-center"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs active:scale-95 self-start sm:self-center"
         >
           <PlusCircle className="w-4 h-4" />
           + Create New User
@@ -301,7 +301,7 @@ export default function UserManagementPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2 text-sm text-white bg-rose-900 hover:bg-rose-950 font-bold rounded-xl disabled:opacity-50"
+                  className="flex-1 py-2 text-sm text-white bg-slate-900 hover:bg-black font-bold rounded-xl disabled:opacity-50"
                 >
                   {submitting ? 'Creating...' : 'Create Account'}
                 </button>
@@ -342,7 +342,7 @@ export default function UserManagementPage() {
                 <button
                   type="submit"
                   disabled={resetting}
-                  className="flex-1 py-2 text-xs font-bold text-white bg-rose-900 hover:bg-rose-950 rounded-xl disabled:opacity-50"
+                  className="flex-1 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl disabled:opacity-50"
                 >
                   {resetting ? 'Saving...' : 'Update Password'}
                 </button>

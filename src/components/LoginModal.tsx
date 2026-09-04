@@ -28,7 +28,7 @@ export default function LoginModal() {
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in-0 duration-200">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-rose-100">
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-rose-800 px-6 py-4 text-white flex items-center justify-between">
+        <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
               src="/logo.png"
@@ -37,7 +37,7 @@ export default function LoginModal() {
             />
             <div>
               <h3 className="font-bold text-lg leading-tight">Admin & Committee Login</h3>
-              <p className="text-xs text-amber-200">Pari Tower Utsav Samiti</p>
+              <p className="text-xs text-amber-400">Pari Tower Utsav Samiti</p>
             </div>
           </div>
           <button
@@ -67,7 +67,7 @@ export default function LoginModal() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:border-rose-800 focus:outline-none"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
                 placeholder="Enter username"
               />
             </div>
@@ -84,7 +84,7 @@ export default function LoginModal() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:border-rose-800 focus:outline-none"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
                 placeholder="••••••••"
               />
             </div>
@@ -93,7 +93,7 @@ export default function LoginModal() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-rose-900 hover:bg-rose-950 text-white font-bold rounded-xl shadow-md shadow-rose-950/20 transition-all disabled:opacity-50 text-sm active:scale-[0.98]"
+            className="w-full py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-xs transition-all disabled:opacity-50 text-sm active:scale-[0.98]"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>

@@ -87,11 +87,11 @@ export default function TopFestivalSelector({
                           setFyDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
-                          isSel ? 'bg-rose-900 text-white font-bold' : 'text-stone-700 hover:bg-stone-50'
+                          isSel ? 'bg-amber-50 text-amber-900 font-bold border-y border-amber-200/80' : 'text-stone-700 hover:bg-stone-50'
                         }`}
                       >
                         <span>{opt.label}</span>
-                        {isSel && <Check className="w-3.5 h-3.5 text-amber-300" />}
+                        {isSel && <Check className="w-3.5 h-3.5 text-amber-600" />}
                       </button>
                     );
                   })}
@@ -108,11 +108,11 @@ export default function TopFestivalSelector({
                 setFestivalDropdownOpen(!festivalDropdownOpen);
                 setFyDropdownOpen(false);
               }}
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-rose-50 to-amber-50/50 hover:from-rose-100/80 hover:to-amber-100/60 border border-rose-200/80 rounded-xl text-xs font-bold text-rose-950 transition-all shadow-xs"
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-stone-50 border border-stone-200/90 rounded-xl text-xs font-bold text-stone-900 transition-all shadow-2xs"
             >
               <Sparkles className="w-4 h-4 text-amber-600" />
               <span>{currentFestLabel}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-rose-800 transition-transform ${festivalDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform ${festivalDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {festivalDropdownOpen && (
@@ -131,12 +131,12 @@ export default function TopFestivalSelector({
                     }}
                     className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
                       selectedFestival === 'all'
-                        ? 'bg-rose-900 text-white font-bold'
+                        ? 'bg-amber-50 text-amber-900 font-bold border-y border-amber-200/80'
                         : 'text-stone-800 hover:bg-stone-50'
                     }`}
                   >
                     <span>✨ All Festivals & Events</span>
-                    {selectedFestival === 'all' && <Check className="w-3.5 h-3.5 text-amber-300" />}
+                    {selectedFestival === 'all' && <Check className="w-3.5 h-3.5 text-amber-600" />}
                   </button>
 
                   <div className="my-1 border-t border-stone-100" />
@@ -152,11 +152,11 @@ export default function TopFestivalSelector({
                           setFestivalDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3.5 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
-                          isSel ? 'bg-rose-900 text-white font-bold' : 'text-stone-700 hover:bg-stone-50'
+                          isSel ? 'bg-amber-50 text-amber-900 font-bold border-y border-amber-200/80' : 'text-stone-700 hover:bg-stone-50'
                         }`}
                       >
                         <span className="truncate pr-2">{f}</span>
-                        {isSel && <Check className="w-3.5 h-3.5 text-amber-300 shrink-0" />}
+                        {isSel && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                       </button>
                     );
                   })}
@@ -171,9 +171,9 @@ export default function TopFestivalSelector({
           <button
             type="button"
             onClick={onOpenTransferModal}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-rose-900 via-rose-950 to-stone-900 text-amber-200 text-xs font-bold rounded-xl shadow-sm hover:brightness-110 transition-all active:scale-95 shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-black text-amber-300 text-xs font-bold rounded-xl shadow-xs hover:brightness-110 transition-all active:scale-95 shrink-0"
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-amber-300" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
             + Transfer Fund
           </button>
         )}
@@ -194,7 +194,7 @@ export default function TopFestivalSelector({
               onClick={() => onFestivalChange(pick)}
               className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap transition-all shrink-0 ${
                 isSelected
-                  ? 'bg-rose-900 text-amber-200 shadow-xs ring-2 ring-rose-900/30'
+                  ? 'bg-stone-900 text-white shadow-xs'
                   : 'bg-stone-100 hover:bg-stone-200/80 text-stone-600'
               }`}
             >

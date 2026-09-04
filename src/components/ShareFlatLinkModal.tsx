@@ -76,14 +76,14 @@ export default function ShareFlatLinkModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150">
       <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-lg overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-rose-950 via-rose-900 to-stone-900 p-4 sm:p-5 text-white flex items-center justify-between">
+        <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-amber-400 text-rose-950 rounded-xl">
+            <div className="p-2 bg-amber-500 text-slate-950 rounded-xl">
               <Share2 className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight">Share Flat Payment Link & QR</h3>
-              <p className="text-[11px] text-amber-200">
+              <p className="text-[11px] text-amber-300">
                 Generate personalized WhatsApp link & QR code for any flat.
               </p>
             </div>
@@ -92,7 +92,7 @@ export default function ShareFlatLinkModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-rose-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+            className="p-1.5 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -109,7 +109,7 @@ export default function ShareFlatLinkModal({
               <select
                 value={selectedFlat}
                 onChange={(e) => setSelectedFlat(e.target.value)}
-                className="w-full text-xs font-bold px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:outline-none"
+                className="w-full text-xs font-bold px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
               >
                 {flats.map((fl) => (
                   <option key={fl.id} value={fl.altName || fl.displayName}>
@@ -126,7 +126,7 @@ export default function ShareFlatLinkModal({
               <select
                 value={selectedFestival}
                 onChange={(e) => setSelectedFestival(e.target.value)}
-                className="w-full text-xs font-bold px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-800 focus:outline-none"
+                className="w-full text-xs font-bold px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none"
               >
                 {festivals.map((fest) => (
                   <option key={fest} value={fest}>

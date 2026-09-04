@@ -64,7 +64,7 @@ export default function Navbar() {
             {/* Donate Quick Action Button */}
             <Link
               href="/donate"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white rounded-xl shadow-sm transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95"
             >
               <Heart className="w-3.5 h-3.5 fill-white" />
               Donate
@@ -113,7 +113,7 @@ export default function Navbar() {
                     <div className="text-xs font-semibold text-gray-900 leading-none">
                       {user?.name}
                     </div>
-                    <div className="text-[10px] text-rose-900 font-bold uppercase tracking-wider mt-0.5">
+                    <div className="text-[10px] text-amber-800 font-bold uppercase tracking-wider mt-0.5">
                       {user?.role === 'ADMIN' ? 'ADMIN' : 'ENTRY'}
                     </div>
                   </div>
@@ -129,9 +129,9 @@ export default function Navbar() {
             ) : (
               <button
                 onClick={() => setLoginModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold bg-rose-900 hover:bg-rose-950 text-white rounded-lg shadow-sm shadow-rose-900/20 transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-stone-900 hover:bg-black text-white rounded-xl shadow-2xs transition-all active:scale-95"
               >
-                <Lock className="w-3.5 h-3.5" />
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
                 Admin Login
               </button>
             )}
@@ -156,11 +156,11 @@ export default function Navbar() {
                 href={link.href}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-rose-50 text-rose-900 font-bold'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-amber-50 text-amber-900 font-bold border border-amber-200/80 shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-rose-900' : 'text-gray-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-amber-800' : 'text-stone-400'}`} />
                 {link.name}
               </Link>
             );
@@ -172,7 +172,7 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1 shadow-lg">
           {isAuthenticated && (
-            <div className="p-3 bg-rose-50 rounded-xl mb-3 border border-orange-100 flex items-center justify-between">
+            <div className="p-3 bg-amber-50/60 rounded-xl mb-3 border border-amber-200/60 flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 font-medium">Logged in as</p>
                 <p className="text-sm font-bold text-gray-900">{user?.name}</p>
@@ -202,8 +202,8 @@ export default function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-rose-900 text-white font-bold shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-stone-900 text-white font-bold shadow-xs'
+                    : 'text-stone-700 hover:bg-stone-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
