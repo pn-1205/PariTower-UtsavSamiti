@@ -30,13 +30,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Donor name is required.' }, { status: 400 });
     }
 
-    // 3. Validate UTR / Reference Number
-    const cleanUtr = (utrNumber || '').trim();
-    if (!cleanUtr || cleanUtr.length < 6) {
-      return NextResponse.json({ error: 'Please enter a valid 12-digit UPI Transaction Ref / UTR number.' }, { status: 400 });
-    }
+    // Optional UTR number (not mandatory)
+    const cleanUtr = (utrNumber || '').trim() || null;
 
-    // 4. Ensure Festival Registered
+    // 3. Ensure Festival Registered
     const validFestival = await ensureFestivalRegistered(festival);
 
     // 5. Connect Contributor (Flat or Other)
@@ -101,8 +98,24 @@ export async function POST(request: Request) {
       });
     }
 
-    // 7. Format notes
-    const noteParts = [`[Online UPI Donation - UTR: ${cleanUtr}]`];
+    // 7. Capture exact transaction timestamp and format notes
+    const now = new Date();
+    const formattedTime = now.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+    const formattedDate = now.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const noteParts = [`[Online UPI Payment - ${formattedTime}, ${formattedDate}]`];
+    if (cleanUtr) {
+      noteParts.push(`UTR: ${cleanUtr}`);
+    }
     if (targetAccount) {
       noteParts.push(`Paid to: ${targetAccount.name}`);
     }
@@ -125,7 +138,7 @@ export async function POST(request: Request) {
         utrNumber: cleanUtr,
         paymentAccountId: targetAccount?.id || null,
         receivedByUserId: null,
-        receivedDate: new Date(),
+        receivedDate: now,
         notes: noteParts.join(' | '),
       },
       include: {
@@ -136,14 +149,16 @@ export async function POST(request: Request) {
       },
     });
 
-    const receiptNo = `PTUS-${new Date().getFullYear()}-${deposit.id.slice(-6).toUpperCase()}`;
+    const receiptNo = `PTUS-${now.getFullYear()}-${deposit.id.slice(-6).toUpperCase()}`;
 
     return NextResponse.json({
       success: true,
       depositId: deposit.id,
       receiptNo,
       deposit,
-      message: 'Donation submitted successfully. It will appear on the general ledger once verified by the committee.',
+      recordedTime: formattedTime,
+      recordedDate: formattedDate,
+      message: 'Payment recorded successfully. The committee will verify this transaction against the account statement using the timestamp and amount.',
     });
   } catch (error: any) {
     console.error('Error submitting donation:', error);

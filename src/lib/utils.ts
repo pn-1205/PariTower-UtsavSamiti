@@ -38,6 +38,17 @@ export function formatDateTime(date: string | Date | null | undefined): string {
   });
 }
 
+export function formatTime(date: string | Date | null | undefined): string {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export function maskPhoneNumber(phone: string | null | undefined): string {
   if (!phone) return '-';
   const lines = phone.split(/[\n,]+/);

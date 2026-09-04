@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
-import { formatCurrency, formatDate, downloadCsv } from '@/lib/utils';
+import { formatCurrency, formatDate, formatTime, downloadCsv } from '@/lib/utils';
 import { getCached } from '@/lib/clientCache';
 import {
   DollarSign,
@@ -390,6 +390,11 @@ export default function DepositsPage() {
                             {d.paymentAccount.name}
                           </span>
                         )}
+                        {formatTime(d.receivedDate) && (
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                            ⏰ {formatTime(d.receivedDate)}
+                          </span>
+                        )}
                       </div>
 
                       {d.utrNumber && (
@@ -408,7 +413,7 @@ export default function DepositsPage() {
 
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                     <div className="text-gray-500">
-                      {formatDate(d.receivedDate)} •{' '}
+                      {formatDate(d.receivedDate)} {formatTime(d.receivedDate) ? `at ${formatTime(d.receivedDate)}` : ''} •{' '}
                       {isPending ? (
                         <span className="text-amber-700 font-medium">Awaiting Committee Approval</span>
                       ) : (
@@ -486,7 +491,12 @@ export default function DepositsPage() {
                       }`}
                     >
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap font-medium text-xs">
-                        {formatDate(d.receivedDate)}
+                        <div className="font-bold text-gray-900">{formatDate(d.receivedDate)}</div>
+                        {formatTime(d.receivedDate) && (
+                          <div className="text-[11px] font-mono text-purple-700 font-bold mt-0.5">
+                            ⏰ {formatTime(d.receivedDate)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         {isPending ? (

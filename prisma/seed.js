@@ -76,7 +76,55 @@ async function main() {
     console.log(`Verified ${flatCount} flats in database.`);
   }
 
-  console.log('Clean seeding complete! No test demo accounts or preseeded transactions.');
+  // 3. Upsert Official Payment Accounts
+  await prisma.paymentAccount.upsert({
+    where: { id: 'acc_suryakant' },
+    update: {
+      name: 'Suryakant Dilip Sabale',
+      accountType: 'UPI_BANK',
+      upiId: '9921137881@icici',
+      phone: '9921137881',
+      bankName: 'ICICI Bank',
+      isDefault: true,
+      isActive: true,
+    },
+    create: {
+      id: 'acc_suryakant',
+      name: 'Suryakant Dilip Sabale',
+      accountType: 'UPI_BANK',
+      upiId: '9921137881@icici',
+      phone: '9921137881',
+      bankName: 'ICICI Bank',
+      isDefault: true,
+      isActive: true,
+    },
+  });
+
+  await prisma.paymentAccount.upsert({
+    where: { id: 'acc_rajeshwar' },
+    update: {
+      name: 'Rajeshwar Dinkar Gawali',
+      accountType: 'UPI_BANK',
+      upiId: '9552051087@ptyes',
+      phone: '9552051087',
+      bankName: 'Yes Bank',
+      isDefault: false,
+      isActive: true,
+    },
+    create: {
+      id: 'acc_rajeshwar',
+      name: 'Rajeshwar Dinkar Gawali',
+      accountType: 'UPI_BANK',
+      upiId: '9552051087@ptyes',
+      phone: '9552051087',
+      bankName: 'Yes Bank',
+      isDefault: false,
+      isActive: true,
+    },
+  });
+
+  console.log('Seeded official UPI accounts: Suryakant Dilip Sabale and Rajeshwar Dinkar Gawali.');
+  console.log('Clean seeding complete!');
 }
 
 main()
