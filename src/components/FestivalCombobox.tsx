@@ -19,12 +19,11 @@ export default function FestivalCombobox({
   label = 'Festival / Event *',
   required = true,
   className = '',
-  placeholder = 'Select or type new festival (e.g. Dahi Handi)...',
+  placeholder = 'Type or select festival (e.g. Dahi Handi)...',
 }: FestivalComboboxProps) {
   const [festivals, setFestivals] = useState<string[]>(DEFAULT_FESTIVALS);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState(value || '');
-  const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync internal query if value prop changes externally
@@ -41,7 +40,6 @@ export default function FestivalCombobox({
         if (res.ok) {
           const data = await res.json();
           if (data.festivals && Array.isArray(data.festivals) && isMounted) {
-            // Deduplicate with default festivals
             const merged = Array.from(new Set([...DEFAULT_FESTIVALS, ...data.festivals]));
             setFestivals(merged);
           }
@@ -56,50 +54,26 @@ export default function FestivalCombobox({
     };
   }, []);
 
-  // Handle outside click to close dropdown
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        // If query was left blank or typed something without choosing, fallback to current selected value
-        if (!query.trim()) {
-          setQuery(value || 'Ganesh Festival');
-          onChange(value || 'Ganesh Festival');
-        } else if (query.trim() !== value) {
-          // Commit whatever user typed as festival
-          selectOrCreate(query.trim());
-        }
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [query, value]);
-
-  // Filtered list
-  const filtered = festivals.filter((f) =>
-    f.toLowerCase().includes(query.toLowerCase().trim())
-  );
-
-  const exactMatch = festivals.some(
-    (f) => f.toLowerCase().trim() === query.toLowerCase().trim()
-  );
-
   const selectOrCreate = async (name: string) => {
     const cleanName = name.trim();
     if (!cleanName) return;
 
-    onChange(cleanName);
-    setQuery(cleanName);
+    // Check if there is an existing festival with different casing
+    const existing = festivals.find((f) => f.toLowerCase() === cleanName.toLowerCase());
+    const finalName = existing || cleanName;
+
+    onChange(finalName);
+    setQuery(finalName);
     setIsOpen(false);
 
-    // If it's a new festival not in list, add locally and persist to backend
-    if (!festivals.some((f) => f.toLowerCase() === cleanName.toLowerCase())) {
-      setFestivals((prev) => [...prev, cleanName]);
+    // If it's brand new, add locally and persist to backend
+    if (!existing) {
+      setFestivals((prev) => [...prev, finalName]);
       try {
         await fetch('/api/festivals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: cleanName }),
+          body: JSON.stringify({ name: finalName }),
         });
       } catch (err) {
         console.error('Failed to persist festival:', err);
@@ -107,12 +81,43 @@ export default function FestivalCombobox({
     }
   };
 
+  // Handle outside click to close dropdown & commit typed text
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        const trimmed = query.trim();
+        if (!trimmed) {
+          // Revert to current selected value or default
+          setQuery(value || 'Ganesh Festival');
+          onChange(value || 'Ganesh Festival');
+        } else if (trimmed !== value) {
+          selectOrCreate(trimmed);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [query, value, festivals]);
+
+  const trimmedQuery = query.trim();
+  const exactMatch = festivals.find(
+    (f) => f.toLowerCase() === trimmedQuery.toLowerCase()
+  );
+
+  const filtered = festivals.filter((f) =>
+    f.toLowerCase().includes(trimmedQuery.toLowerCase())
+  );
+
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-          {label}
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-[11px] font-extrabold text-stone-700 uppercase tracking-wider">
+            {label}
+          </label>
+          <span className="text-[10px] text-stone-400 font-semibold">Type to search or add</span>
+        </div>
       )}
 
       {/* Input Box with Icons */}
@@ -133,48 +138,63 @@ export default function FestivalCombobox({
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              if (filtered.length > 0 && !exactMatch && query.trim()) {
-                // If there's an exact or first match, choose it; else create query
-                const first = filtered[0];
-                if (first.toLowerCase() === query.toLowerCase().trim()) {
-                  selectOrCreate(first);
-                } else {
-                  selectOrCreate(query);
-                }
-              } else if (query.trim()) {
-                selectOrCreate(query);
+              if (exactMatch) {
+                selectOrCreate(exactMatch);
+              } else if (filtered.length > 0 && trimmedQuery) {
+                // If there is a filtered match, select first match
+                selectOrCreate(filtered[0]);
+              } else if (trimmedQuery) {
+                // Add new festival
+                selectOrCreate(trimmedQuery);
               }
             } else if (e.key === 'Escape') {
               setIsOpen(false);
             }
           }}
           placeholder={placeholder}
-          className="w-full pl-9 pr-8 py-2 text-sm font-semibold text-gray-900 bg-white border border-stone-300 rounded-xl focus:ring-2 focus:ring-rose-900 focus:border-rose-900 focus:outline-none shadow-sm transition-all"
+          className="w-full pl-9 pr-16 py-2.5 text-xs font-bold text-stone-900 bg-white hover:bg-stone-50/50 border border-stone-300 hover:border-stone-400 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none shadow-2xs transition-all"
         />
 
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="absolute right-2.5 top-2.5 text-stone-400 hover:text-stone-600 focus:outline-none"
-        >
-          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="absolute right-2.5 top-2.5 flex items-center gap-1">
+          {query && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setQuery('');
+                setIsOpen(true);
+              }}
+              className="p-0.5 text-stone-400 hover:text-stone-700 rounded-md transition-colors"
+              title="Clear input"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="p-0.5 text-stone-400 hover:text-stone-700 transition-colors"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-600' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden animate-in fade-in-0 duration-150 max-h-64 flex flex-col">
-          {/* Quick chips bar for fast tap */}
-          <div className="p-2 bg-stone-50/80 border-b border-stone-200/70 flex flex-wrap gap-1.5">
-            {['Ganesh Festival', 'Navratri Festival', 'Dahi Handi', 'General / Society Events'].map((chip) => (
+        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl border border-stone-200 overflow-hidden animate-in fade-in-0 duration-150 max-h-72 flex flex-col">
+          {/* Quick chips bar for 1-tap selection */}
+          <div className="p-2 bg-stone-50/90 border-b border-stone-200/80 flex flex-wrap gap-1.5">
+            {['Ganesh Festival', 'Navratri Festival', 'Dahi Handi', 'Kojagiri', 'Diwali', 'General / Society Events'].map((chip) => (
               <button
                 key={chip}
                 type="button"
                 onClick={() => selectOrCreate(chip)}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all ${
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition-all ${
                   value === chip
-                    ? 'bg-rose-900 text-amber-200 shadow-sm'
-                    : 'bg-white text-stone-700 border border-stone-200 hover:bg-stone-100'
+                    ? 'bg-stone-900 text-white shadow-2xs'
+                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
                 {chip === 'General / Society Events' ? 'General' : chip}
@@ -182,21 +202,26 @@ export default function FestivalCombobox({
             ))}
           </div>
 
-          <div className="overflow-y-auto p-1.5 divide-y divide-stone-100">
-            {/* Create New Festival Option if typed query is not an exact match */}
-            {query.trim() && !exactMatch && (
+          <div className="overflow-y-auto p-1.5 space-y-0.5">
+            {/* Create New Festival Option if typed query does not exactly match any existing festival */}
+            {trimmedQuery && !exactMatch && (
               <button
                 type="button"
-                onClick={() => selectOrCreate(query.trim())}
-                className="w-full text-left px-3 py-2 text-xs font-bold text-rose-900 bg-rose-50/70 hover:bg-rose-100 rounded-xl flex items-center justify-between transition-colors my-1 border border-rose-200/60"
+                onClick={() => selectOrCreate(trimmedQuery)}
+                className="w-full text-left p-2.5 text-xs font-bold text-amber-950 bg-amber-50 hover:bg-amber-100/80 rounded-xl flex items-center justify-between transition-all border border-amber-200/90 shadow-2xs group"
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-1 bg-rose-900 text-white rounded-lg">
+                  <div className="p-1 bg-amber-600 group-hover:bg-amber-700 text-white rounded-lg transition-colors">
                     <Plus className="w-3.5 h-3.5" />
                   </div>
-                  <span>Add new festival: &ldquo;<strong>{query.trim()}</strong>&rdquo;</span>
+                  <div>
+                    <span className="block font-black">Add &ldquo;{trimmedQuery}&rdquo;</span>
+                    <span className="text-[10px] text-amber-800 font-semibold block">Create as new festival in records</span>
+                  </div>
                 </div>
-                <span className="text-[10px] text-rose-700 uppercase tracking-wider font-semibold">Press Enter</span>
+                <span className="text-[10px] px-2 py-0.5 bg-amber-200/80 text-amber-950 uppercase tracking-wider font-extrabold rounded-md">
+                  Press Enter
+                </span>
               </button>
             )}
 
@@ -208,23 +233,23 @@ export default function FestivalCombobox({
                   key={fest}
                   type="button"
                   onClick={() => selectOrCreate(fest)}
-                  className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-xl flex items-center justify-between transition-colors ${
+                  className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-xl flex items-center justify-between transition-all ${
                     isSelected
-                      ? 'bg-rose-900 text-white font-bold'
-                      : 'text-stone-800 hover:bg-stone-100'
+                      ? 'bg-stone-900 text-white font-black shadow-2xs'
+                      : 'text-stone-800 hover:bg-stone-100 hover:text-stone-900'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <Sparkles className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-300' : 'text-amber-600'}`} />
-                    {fest}
+                    <Sparkles className={`w-3.5 h-3.5 ${isSelected ? 'text-amber-400' : 'text-amber-600'}`} />
+                    <span>{fest}</span>
                   </span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-amber-300" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 stroke-[3]" />}
                 </button>
               );
             })}
 
-            {filtered.length === 0 && !query.trim() && (
-              <div className="p-3 text-center text-xs text-stone-400">No festivals available.</div>
+            {filtered.length === 0 && !trimmedQuery && (
+              <div className="p-3 text-center text-xs text-stone-400">No festivals found.</div>
             )}
           </div>
         </div>

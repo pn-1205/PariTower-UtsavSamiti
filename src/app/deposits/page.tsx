@@ -15,15 +15,30 @@ import {
   FileSpreadsheet,
   FileText,
   FileCode,
-  Share2,
   CheckCircle2,
   Clock,
   Check,
+  CreditCard,
+  Layers,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import TopFestivalSelector from '@/components/TopFestivalSelector';
-import ShareFlatLinkModal from '@/components/ShareFlatLinkModal';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { getCurrentFinancialYear } from '@/lib/festivalUtils';
+
+const SOURCE_OPTIONS = [
+  { value: 'all', label: 'All Sources (Flats & Others)' },
+  { value: 'flat', label: 'Flats Only' },
+  { value: 'other', label: 'External Contributors' },
+];
+
+const METHOD_OPTIONS = [
+  { value: 'all', label: 'All Payment Methods' },
+  { value: 'UPI', label: 'UPI' },
+  { value: 'Cash', label: 'Cash' },
+  { value: 'Bank Transfer', label: 'Bank Transfer' },
+  { value: 'Other', label: 'Other' },
+];
 
 export default function DepositsPage() {
   const {
@@ -52,7 +67,6 @@ export default function DepositsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals & Action States
-  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [deleteItem, setDeleteItem] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
@@ -61,7 +75,6 @@ export default function DepositsPage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (selectedFestival !== 'all') params.set('festival', selectedFestival);
       if (selectedFy !== 'all') params.set('fy', selectedFy);
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (methodFilter !== 'all') params.set('method', methodFilter);
@@ -172,16 +185,6 @@ export default function DepositsPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Share Flat Link Button */}
-          <button
-            onClick={() => setShareModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-black rounded-xl shadow-sm transition-all active:scale-95"
-            title="Generate personalized link and QR code for WhatsApp sharing"
-          >
-            <Share2 className="w-4 h-4" />
-            Share Flat Link
-          </button>
-
           <button
             onClick={handleExportPdf}
             disabled={deposits.length === 0}
@@ -224,12 +227,13 @@ export default function DepositsPage() {
         </div>
       </div>
 
-      {/* Modern Top-of-Screen Festival & FY Selector */}
+      {/* Modern Top-of-Screen FY Selector (Deposits are general fund) */}
       <TopFestivalSelector
         selectedFy={selectedFy}
         onFyChange={setSelectedFy}
-        selectedFestival={selectedFestival}
-        onFestivalChange={setSelectedFestival}
+        selectedFestival="all"
+        onFestivalChange={() => {}}
+        hideFestival={true}
       />
 
       {/* Verification Status Filter Pills */}
@@ -280,45 +284,39 @@ export default function DepositsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+      <div className="bg-white/95 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl shadow-sm border border-stone-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 relative z-10">
         {/* Search */}
         <div className="sm:col-span-5 relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           <input
             type="text"
             placeholder="Search by donor name, flat (e.g. 808), notes, receiver..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none transition-all placeholder:text-stone-400"
           />
         </div>
 
         {/* Source selector */}
         <div className="sm:col-span-3">
-          <select
+          <CustomSelect
             value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
-          >
-            <option value="all">All Sources (Flats & Others)</option>
-            <option value="flat">Flats Only</option>
-            <option value="other">External Contributors Only</option>
-          </select>
+            onChange={setSourceFilter}
+            options={SOURCE_OPTIONS}
+            headerLabel="Filter By Source"
+            icon={Building2}
+          />
         </div>
 
         {/* Payment method selector */}
         <div className="sm:col-span-4">
-          <select
+          <CustomSelect
             value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none font-medium"
-          >
-            <option value="all">All Payment Methods</option>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Other">Other</option>
-          </select>
+            onChange={setMethodFilter}
+            options={METHOD_OPTIONS}
+            headerLabel="Filter By Payment Method"
+            icon={CreditCard}
+          />
         </div>
       </div>
 
@@ -608,13 +606,6 @@ export default function DepositsPage() {
           loading={deleting}
         />
       )}
-
-      {/* Share Flat Payment Link & QR Modal */}
-      <ShareFlatLinkModal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        defaultFestival={selectedFestival !== 'all' ? selectedFestival : 'Ganesh Festival'}
-      />
     </div>
   );
 }

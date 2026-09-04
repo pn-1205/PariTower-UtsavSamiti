@@ -3,7 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import { formatCurrency, formatDate, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
-import { User, Search, PlusCircle, Phone, Gift, CheckCircle2 } from 'lucide-react';
+import { User, Search, PlusCircle, Phone, Gift, CheckCircle2, Tag } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
+
+const CATEGORY_OPTIONS = [
+  { value: 'all', label: 'All Contributor Categories' },
+  ...CONTRIBUTOR_CATEGORIES.map((c) => ({ value: c, label: c })),
+];
 
 export default function ContributorsPage() {
   const { user, isAuthenticated, refreshTrigger, triggerRefresh } = useAuth();
@@ -99,29 +105,26 @@ export default function ContributorsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+      <div className="bg-white/95 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl shadow-sm border border-stone-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 relative z-10">
         <div className="sm:col-span-8 relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           <input
             type="text"
             placeholder="Search contributor name or notes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 focus:outline-none transition-all placeholder:text-stone-400"
           />
         </div>
 
         <div className="sm:col-span-4">
-          <select
+          <CustomSelect
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none font-medium"
-          >
-            <option value="all">All Contributor Categories</option>
-            {CONTRIBUTOR_CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+            onChange={setCategoryFilter}
+            options={CATEGORY_OPTIONS}
+            headerLabel="Filter By Category"
+            icon={Tag}
+          />
         </div>
       </div>
 

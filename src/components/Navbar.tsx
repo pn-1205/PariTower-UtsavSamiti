@@ -29,8 +29,7 @@ export default function Navbar() {
   const [accountsModalOpen, setAccountsModalOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Donate', href: '/donate', icon: Heart },
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Money Received', href: '/deposits', icon: IndianRupee },
     { name: 'Expenses', href: '/expenses', icon: TrendingDown },
     { name: 'Donations', href: '/donations', icon: Gift },
@@ -61,9 +60,9 @@ export default function Navbar() {
 
           {/* Right Action: Auth & Quick Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Donate Quick Action Button */}
+            {/* Donate Quick Action Button - scrolls to donate widget on Home */}
             <Link
-              href="/donate"
+              href="/#donate-section"
               className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-black bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-xl shadow-2xs transition-all active:scale-95 shrink-0"
             >
               <Heart className="w-3.5 h-3.5 fill-white shrink-0" />

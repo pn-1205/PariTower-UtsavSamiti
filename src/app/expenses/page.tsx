@@ -16,10 +16,23 @@ import {
   FileSpreadsheet,
   FileText,
   FileCode,
+  CreditCard,
+  Layers,
 } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import TopFestivalSelector from '@/components/TopFestivalSelector';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { getCurrentFinancialYear } from '@/lib/festivalUtils';
+
+const CATEGORY_OPTIONS = [
+  { value: 'all', label: 'All Categories' },
+  ...EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c })),
+];
+
+const METHOD_OPTIONS = [
+  { value: 'all', label: 'All Payment Methods' },
+  ...PAYMENT_METHODS.map((m) => ({ value: m, label: m })),
+];
 
 export default function ExpensesPage() {
   const {
@@ -201,42 +214,36 @@ export default function ExpensesPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+      <div className="bg-white/95 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl shadow-sm border border-stone-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 relative z-10">
         <div className="sm:col-span-6 relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           <input
             type="text"
             placeholder="Search by vendor, item, description, receiver..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 focus:outline-none transition-all placeholder:text-stone-400"
           />
         </div>
 
         <div className="sm:col-span-3">
-          <select
+          <CustomSelect
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 focus:outline-none font-medium"
-          >
-            <option value="all">All Categories</option>
-            {EXPENSE_CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+            onChange={setCategoryFilter}
+            options={CATEGORY_OPTIONS}
+            headerLabel="Filter By Category"
+            icon={Tag}
+          />
         </div>
 
         <div className="sm:col-span-3">
-          <select
+          <CustomSelect
             value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-500 focus:outline-none font-medium"
-          >
-            <option value="all">All Payment Methods</option>
-            {PAYMENT_METHODS.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
+            onChange={setMethodFilter}
+            options={METHOD_OPTIONS}
+            headerLabel="Filter By Payment Method"
+            icon={CreditCard}
+          />
         </div>
       </div>
 

@@ -12,12 +12,21 @@ export interface LedgerItem {
   party: string;
   category: string;
   amount: number;
+  runningBalance?: number;
   paymentMethod: string;
   user: string;
   notes?: string;
 }
 
-export function getLedgerFilename(extension: 'xlsx' | 'pdf' | 'csv', options?: { festival?: string; fy?: string }): string {
+export interface LedgerExportOptions {
+  festival?: string;
+  fy?: string;
+  openingBalance?: number;
+  closingBalance?: number;
+  isFrozen?: boolean;
+}
+
+export function getLedgerFilename(extension: 'xlsx' | 'pdf' | 'csv', options?: LedgerExportOptions): string {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -25,38 +34,81 @@ export function getLedgerFilename(extension: 'xlsx' | 'pdf' | 'csv', options?: {
   const year = now.getFullYear();
   const festPrefix = options?.festival && options.festival !== 'all' ? `${options.festival.replace(/\s+/g, '_')}_` : '';
   const fySuffix = options?.fy && options.fy !== 'all' ? `_FY_${options.fy}` : '';
-  return `${festPrefix}Ledger${fySuffix}_as_on_${day}_${month}_${year}.${extension}`;
+  const statusPrefix = options?.isFrozen ? 'AUDITED_FROZEN_' : '';
+  return `${statusPrefix}${festPrefix}Ledger${fySuffix}_as_on_${day}_${month}_${year}.${extension}`;
 }
 
-export function exportLedgerToCsv(transactions: LedgerItem[], options?: { festival?: string; fy?: string }) {
+export function exportLedgerToCsv(transactions: LedgerItem[], options?: LedgerExportOptions) {
   const filename = getLedgerFilename('csv', options);
   const headers = [
     'Sr. No.',
     'Date',
-    'Festival',
+    'Festival / Fund',
     'Transaction Type',
-    'Party / Donor',
+    'Party / Donor / Vendor',
     'Category',
     'Income (+ INR)',
     'Expense (- INR)',
+    'Running Balance (INR)',
     'Payment Method',
     'Handled / Entered By',
     'Notes / Purpose',
   ];
 
-  const rows = transactions.map((t, idx) => [
-    idx + 1,
-    formatDate(t.date),
-    `"${(t.festival || 'Ganesh Festival').replace(/"/g, '""')}"`,
-    t.kind === 'deposit' ? 'INCOME (+)' : t.kind === 'expense' ? 'EXPENSE (-)' : 'IN-KIND DONATION',
-    `"${(t.party || '').replace(/"/g, '""')}"`,
-    `"${(t.category || '').replace(/"/g, '""')}"`,
-    t.kind === 'deposit' ? t.amount : 0,
-    t.kind === 'expense' ? Math.abs(t.amount) : 0,
-    `"${(t.paymentMethod || '').replace(/"/g, '""')}"`,
-    `"${(t.user || '').replace(/"/g, '""')}"`,
-    `"${(t.notes || t.title || '').replace(/"/g, '""')}"`,
-  ]);
+  const rows: any[][] = [];
+
+  // Opening Balance Row
+  if (options?.openingBalance !== undefined && options.openingBalance !== 0) {
+    rows.push([
+      0,
+      '-',
+      options.festival || 'General Utsav Fund',
+      'OPENING BALANCE (B/F)',
+      'Balance Brought Forward',
+      'Carried Forward',
+      0,
+      0,
+      options.openingBalance,
+      '-',
+      'System / Ledger Audit',
+      'Opening balance brought forward from prior period',
+    ]);
+  }
+
+  transactions.forEach((t, idx) => {
+    rows.push([
+      idx + 1,
+      formatDate(t.date),
+      `"${(t.kind === 'deposit' ? 'General Utsav Fund' : (t.festival || 'Ganesh Festival')).replace(/"/g, '""')}"`,
+      t.kind === 'deposit' ? 'INCOME (+)' : t.kind === 'expense' ? 'EXPENSE (-)' : 'IN-KIND DONATION',
+      `"${(t.party || '').replace(/"/g, '""')}"`,
+      `"${(t.category || '').replace(/"/g, '""')}"`,
+      t.kind === 'deposit' ? t.amount : 0,
+      t.kind === 'expense' ? Math.abs(t.amount) : 0,
+      t.runningBalance !== undefined ? t.runningBalance : '',
+      `"${(t.paymentMethod || '').replace(/"/g, '""')}"`,
+      `"${(t.user || '').replace(/"/g, '""')}"`,
+      `"${(t.notes || t.title || '').replace(/"/g, '""')}"`,
+    ]);
+  });
+
+  // Closing Balance Row
+  if (options?.closingBalance !== undefined) {
+    rows.push([
+      'C/F',
+      '-',
+      options.festival || 'General Utsav Fund',
+      'CLOSING BALANCE (C/F)',
+      'Balance Carried Forward',
+      'Carried Forward',
+      0,
+      0,
+      options.closingBalance,
+      '-',
+      'System / Ledger Audit',
+      'Cumulative closing surplus carried forward',
+    ]);
+  }
 
   const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -73,7 +125,7 @@ export function exportLedgerToCsv(transactions: LedgerItem[], options?: { festiv
 export function exportLedgerToExcel(
   transactions: LedgerItem[],
   summary?: { totalReceived: number; totalExpenses: number; currentBalance: number },
-  options?: { festival?: string; fy?: string }
+  options?: LedgerExportOptions
 ) {
   const filename = getLedgerFilename('xlsx', options);
   const nowStr = new Date().toLocaleDateString('en-GB', {
@@ -85,9 +137,11 @@ export function exportLedgerToExcel(
   const totRec = summary ? summary.totalReceived : transactions.filter(t => t.kind === 'deposit').reduce((acc, t) => acc + t.amount, 0);
   const totExp = summary ? summary.totalExpenses : transactions.filter(t => t.kind === 'expense').reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const bal = summary ? summary.currentBalance : (totRec - totExp);
+  const opBal = options?.openingBalance || 0;
+  const clBal = options?.closingBalance !== undefined ? options.closingBalance : (opBal + bal);
 
   const mainTitle = options?.festival && options.festival !== 'all' 
-    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}` 
+    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}${options?.isFrozen ? ' (AUDITED & FROZEN)' : ''}` 
     : 'PARI TOWER UTSAV SAMITI (PTUS)';
   const subTitle = `OFFICIAL GENERAL LEDGER ${options?.fy && options.fy !== 'all' ? `(FY ${options.fy})` : ''} — AS ON ${nowStr.toUpperCase()}`;
 
@@ -97,24 +151,44 @@ export function exportLedgerToExcel(
     [subTitle],
     [''],
     ['FINANCIAL SUMMARY STATEMENT'],
-    ['Total Money Received (INR)', totRec],
-    ['Total Expenses (INR)', totExp],
-    ['Current Net Balance (INR)', bal],
+    ['Balance Brought Forward (Opening Balance)', opBal],
+    ['Total Money Received (New Donations)', totRec],
+    ['Total Expenses Paid', totExp],
+    ['Balance Carried Forward (Closing Balance)', clBal],
     [''],
     [
       'Sr. No.',
       'Date',
-      'Festival',
+      'Festival / Fund',
       'Transaction Type',
       'Donor / Party Name',
       'Category',
       'Income (+ INR)',
       'Expense (- INR)',
+      'Running Balance (INR)',
       'Payment Method',
       'Handled / Entered By',
       'Notes & Remarks',
     ],
   ];
+
+  // Opening Balance Row
+  if (opBal !== 0) {
+    sheetData.push([
+      0,
+      '-',
+      options?.festival || 'General Utsav Fund',
+      'OPENING BALANCE (B/F)',
+      'Balance Brought Forward',
+      'Carried Forward',
+      0,
+      0,
+      opBal,
+      '-',
+      'System / Ledger Audit',
+      'Opening balance brought forward from prior period',
+    ]);
+  }
 
   transactions.forEach((t, idx) => {
     const isDeposit = t.kind === 'deposit';
@@ -123,17 +197,34 @@ export function exportLedgerToExcel(
     sheetData.push([
       idx + 1,
       formatDate(t.date),
-      t.festival || 'Ganesh Festival',
+      isDeposit ? 'General Utsav Fund' : (t.festival || 'Ganesh Festival'),
       isDeposit ? 'INCOME (+)' : isExpense ? 'EXPENSE (-)' : 'IN-KIND DONATION',
       t.party,
       t.category,
       isDeposit ? t.amount : 0,
       isExpense ? Math.abs(t.amount) : 0,
+      t.runningBalance !== undefined ? t.runningBalance : '',
       t.paymentMethod || 'N/A',
       t.user || 'N/A',
       t.notes || t.title || '',
     ]);
   });
+
+  // Closing Balance row
+  sheetData.push([
+    'C/F',
+    '-',
+    options?.festival || 'General Utsav Fund',
+    'CLOSING BALANCE (C/F)',
+    'Balance Carried Forward',
+    'Carried Forward',
+    0,
+    0,
+    clBal,
+    '-',
+    'System / Ledger Audit',
+    'Cumulative closing surplus carried forward',
+  ]);
 
   // Footer Totals row
   sheetData.push(['']);
@@ -146,7 +237,8 @@ export function exportLedgerToExcel(
     '',
     totRec,
     totExp,
-    `NET BALANCE: ${bal}`,
+    `CLOSING BALANCE: ${clBal}`,
+    '',
     '',
     '',
   ]);
@@ -157,12 +249,13 @@ export function exportLedgerToExcel(
   ws['!cols'] = [
     { wch: 8 },  // Sr No
     { wch: 14 }, // Date
-    { wch: 20 }, // Festival
+    { wch: 22 }, // Festival / Fund
     { wch: 18 }, // Type
     { wch: 30 }, // Party / Donor
     { wch: 22 }, // Category
     { wch: 16 }, // Income
     { wch: 16 }, // Expense
+    { wch: 20 }, // Running Balance
     { wch: 16 }, // Payment Method
     { wch: 20 }, // User
     { wch: 40 }, // Notes
@@ -177,7 +270,7 @@ export function exportLedgerToExcel(
 export function exportLedgerToPdf(
   transactions: LedgerItem[],
   summary?: { totalReceived: number; totalExpenses: number; currentBalance: number },
-  options?: { festival?: string; fy?: string }
+  options?: LedgerExportOptions
 ) {
   const filename = getLedgerFilename('pdf', options);
   const nowStr = new Date().toLocaleDateString('en-GB', {
@@ -190,7 +283,8 @@ export function exportLedgerToPdf(
 
   const totRec = summary ? summary.totalReceived : transactions.filter(t => t.kind === 'deposit').reduce((acc, t) => acc + t.amount, 0);
   const totExp = summary ? summary.totalExpenses : transactions.filter(t => t.kind === 'expense').reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const bal = summary ? summary.currentBalance : (totRec - totExp);
+  const opBal = options?.openingBalance || 0;
+  const clBal = options?.closingBalance !== undefined ? options.closingBalance : (opBal + totRec - totExp);
 
   // Landscape A4 for rich accounting view
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
@@ -204,61 +298,95 @@ export function exportLedgerToPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   const titleText = options?.festival && options.festival !== 'all' 
-    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}` 
+    ? `PARI TOWER UTSAV SAMITI — ${options.festival.toUpperCase()}${options?.isFrozen ? ' (AUDITED & FROZEN)' : ''}` 
     : 'PARI TOWER UTSAV SAMITI (PTUS)';
   doc.text(titleText, 24, 26);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  const subTitleText = `Official Financial General Ledger ${options?.fy && options.fy !== 'all' ? `(FY ${options.fy})` : ''}`;
+  const subTitleText = `Official Financial General Ledger ${options?.fy && options.fy !== 'all' ? `(FY ${options.fy})` : ''} • Audited Statement`;
   doc.text(subTitleText, 24, 42);
 
   const asOnText = `Ledger As On: ${nowStr}`;
   const asOnWidth = doc.getTextWidth(asOnText);
   doc.text(asOnText, pageWidth - asOnWidth - 24, 32);
 
-  // 2. Financial Summary Cards
+  // 2. Financial Summary Cards (4 Cards across width)
   const cardY = 64;
-  const cardWidth = (pageWidth - 48 - 24) / 3;
+  const cardGap = 8;
+  const cardWidth = (pageWidth - 48 - (cardGap * 3)) / 4;
   const cardHeight = 44;
 
-  // Received Card
-  doc.setFillColor(240, 253, 244); // light emerald #f0fdf4
-  doc.setDrawColor(187, 247, 208);
-  doc.roundedRect(24, cardY, cardWidth, cardHeight, 6, 6, 'FD');
-  doc.setTextColor(22, 101, 52);
-  doc.setFontSize(8);
+  // Card 1: Opening Balance (B/F) - Slate
+  const card1X = 24;
+  doc.setFillColor(241, 245, 249); // slate-100
+  doc.setDrawColor(203, 213, 225); // slate-300
+  doc.roundedRect(card1X, cardY, cardWidth, cardHeight, 6, 6, 'FD');
+  doc.setTextColor(71, 85, 105); // slate-600
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL MONEY RECEIVED', 34, cardY + 16);
-  doc.setFontSize(14);
-  doc.text(formatCurrency(totRec), 34, cardY + 34);
+  doc.text('OPENING BALANCE (B/F)', card1X + 10, cardY + 16);
+  doc.setFontSize(13);
+  doc.setTextColor(15, 23, 42); // slate-900
+  doc.text(formatCurrency(opBal), card1X + 10, cardY + 34);
 
-  // Expenses Card
-  const expCardX = 24 + cardWidth + 12;
-  doc.setFillColor(255, 241, 242); // light rose #fff1f2
-  doc.setDrawColor(254, 205, 211);
-  doc.roundedRect(expCardX, cardY, cardWidth, cardHeight, 6, 6, 'FD');
-  doc.setTextColor(159, 18, 57);
-  doc.setFontSize(8);
+  // Card 2: New Donations Received - Emerald
+  const card2X = card1X + cardWidth + cardGap;
+  doc.setFillColor(240, 253, 244); // emerald-50
+  doc.setDrawColor(187, 247, 208); // emerald-200
+  doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 6, 6, 'FD');
+  doc.setTextColor(22, 101, 52); // emerald-800
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL EXPENSES PAID', expCardX + 10, cardY + 16);
-  doc.setFontSize(14);
-  doc.text(formatCurrency(totExp), expCardX + 10, cardY + 34);
+  doc.text('NEW DONATIONS (+)', card2X + 10, cardY + 16);
+  doc.setFontSize(13);
+  doc.text(`+${formatCurrency(totRec)}`, card2X + 10, cardY + 34);
 
-  // Net Balance Card
-  const balCardX = expCardX + cardWidth + 12;
-  doc.setFillColor(255, 247, 237); // light amber
-  doc.setDrawColor(254, 215, 170);
-  doc.roundedRect(balCardX, cardY, cardWidth, cardHeight, 6, 6, 'FD');
-  doc.setTextColor(154, 52, 18);
-  doc.setFontSize(8);
+  // Card 3: Expenses Paid - Rose
+  const card3X = card2X + cardWidth + cardGap;
+  doc.setFillColor(255, 241, 242); // rose-50
+  doc.setDrawColor(254, 205, 211); // rose-200
+  doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 6, 6, 'FD');
+  doc.setTextColor(159, 18, 57); // rose-800
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('CURRENT NET CASH BALANCE', balCardX + 10, cardY + 16);
-  doc.setFontSize(14);
-  doc.text(formatCurrency(bal), balCardX + 10, cardY + 34);
+  doc.text('EVENT EXPENSES (-)', card3X + 10, cardY + 16);
+  doc.setFontSize(13);
+  doc.text(`-${formatCurrency(totExp)}`, card3X + 10, cardY + 34);
+
+  // Card 4: Carried Forward (C/F) - Indigo
+  const card4X = card3X + cardWidth + cardGap;
+  doc.setFillColor(238, 242, 255); // indigo-50
+  doc.setDrawColor(199, 210, 254); // indigo-200
+  doc.roundedRect(card4X, cardY, cardWidth, cardHeight, 6, 6, 'FD');
+  doc.setTextColor(67, 56, 202); // indigo-700
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CARRIED FORWARD (C/F)', card4X + 10, cardY + 16);
+  doc.setFontSize(13);
+  doc.text(formatCurrency(clBal), card4X + 10, cardY + 34);
 
   // 3. Transactions Table
-  const tableRows = transactions.map((t, index) => {
+  const tableRows: any[][] = [];
+
+  // Opening Balance Row
+  if (options?.openingBalance !== undefined && options.openingBalance !== 0) {
+    tableRows.push([
+      'B/F',
+      '-',
+      options.festival || 'General Utsav Fund',
+      'OPENING (B/F)',
+      'Balance Brought Forward',
+      'Prior Period Surplus',
+      '-',
+      formatCurrency(options.openingBalance),
+      '-',
+      'System Audit',
+      'Opening balance brought forward from prior period',
+    ]);
+  }
+
+  transactions.forEach((t, index) => {
     const isDeposit = t.kind === 'deposit';
     const isExpense = t.kind === 'expense';
     const typeLabel = isDeposit ? 'INCOME (+)' : isExpense ? 'EXPENSE (-)' : 'IN-KIND';
@@ -267,20 +395,39 @@ export function exportLedgerToPdf(
       : isExpense
       ? `-${formatCurrency(Math.abs(t.amount))}`
       : 'In-Kind';
+    const runBalFormatted = t.runningBalance !== undefined ? formatCurrency(t.runningBalance) : '-';
 
-    return [
+    tableRows.push([
       String(index + 1),
       formatDate(t.date),
-      t.festival || 'Ganesh Festival',
+      isDeposit ? 'General Utsav Fund' : (t.festival || 'Ganesh Festival'),
       typeLabel,
       t.party || '-',
       t.category || '-',
       amountFormatted,
+      runBalFormatted,
       t.paymentMethod || '-',
       t.user || '-',
       t.notes || t.title || '-',
-    ];
+    ]);
   });
+
+  // Closing Balance Row
+  if (options?.closingBalance !== undefined) {
+    tableRows.push([
+      'C/F',
+      '-',
+      options.festival || 'General Utsav Fund',
+      'CLOSING (C/F)',
+      'Balance Carried Forward',
+      'Cumulative Surplus',
+      '-',
+      formatCurrency(options.closingBalance),
+      '-',
+      'System Audit',
+      'Cumulative closing balance carried forward to next event',
+    ]);
+  }
 
   autoTable(doc, {
     startY: 120,
@@ -288,11 +435,12 @@ export function exportLedgerToPdf(
     head: [[
       '#',
       'Date',
-      'Festival',
+      'Festival / Fund',
       'Type',
       'Donor / Party',
       'Category',
-      'Amount (INR)',
+      'Amount',
+      'Running Bal',
       'Payment',
       'Handled By',
       'Notes / Purpose',
@@ -303,7 +451,7 @@ export function exportLedgerToPdf(
       fillColor: [136, 19, 55], // Sacred Maroon #881337
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 9,
+      fontSize: 8.5,
       halign: 'left',
     },
     styles: {
@@ -312,28 +460,42 @@ export function exportLedgerToPdf(
       overflow: 'linebreak',
     },
     columnStyles: {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 46 },
-      2: { cellWidth: 70 },
-      3: { cellWidth: 55, fontStyle: 'bold' },
-      4: { cellWidth: 120, fontStyle: 'bold' },
+      0: { cellWidth: 22 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 80 },
+      3: { cellWidth: 62, fontStyle: 'bold' },
+      4: { cellWidth: 110, fontStyle: 'bold' },
       5: { cellWidth: 80 },
-      6: { cellWidth: 70, halign: 'right', fontStyle: 'bold' },
-      7: { cellWidth: 60 },
-      8: { cellWidth: 70 },
-      9: { cellWidth: 'auto' },
+      6: { cellWidth: 72, halign: 'right', fontStyle: 'bold' },
+      7: { cellWidth: 72, halign: 'right', fontStyle: 'bold' },
+      8: { cellWidth: 55 },
+      9: { cellWidth: 65 },
+      10: { cellWidth: 'auto' },
     },
     didParseCell: (data) => {
       if (data.section === 'body') {
-        const row = transactions[data.row.index];
-        if (row) {
-          if (data.column.index === 2 || data.column.index === 5) {
-            if (row.kind === 'deposit') {
-              data.cell.styles.textColor = [4, 120, 87]; // emerald
-            } else if (row.kind === 'expense') {
-              data.cell.styles.textColor = [190, 18, 60]; // rose
-            } else {
-              data.cell.styles.textColor = [180, 83, 9]; // amber
+        const rowData = tableRows[data.row.index];
+        if (rowData) {
+          const isBF = rowData[0] === 'B/F';
+          const isCF = rowData[0] === 'C/F';
+          if (isBF || isCF) {
+            data.cell.styles.fillColor = isBF ? [241, 245, 249] : [238, 242, 255];
+            data.cell.styles.fontStyle = 'bold';
+            if (data.column.index === 3 || data.column.index === 7) {
+              data.cell.styles.textColor = isBF ? [71, 85, 105] : [67, 56, 202];
+            }
+          } else {
+            const typeText = String(rowData[3]);
+            if (data.column.index === 3 || data.column.index === 6) {
+              if (typeText.includes('INCOME')) {
+                data.cell.styles.textColor = [4, 120, 87]; // emerald
+              } else if (typeText.includes('EXPENSE')) {
+                data.cell.styles.textColor = [190, 18, 60]; // rose
+              } else {
+                data.cell.styles.textColor = [180, 83, 9]; // amber
+              }
+            } else if (data.column.index === 7) {
+              data.cell.styles.textColor = [30, 41, 59]; // slate-800
             }
           }
         }

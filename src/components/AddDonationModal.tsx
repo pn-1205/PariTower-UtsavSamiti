@@ -4,14 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { DONATION_TYPES, CONTRIBUTOR_CATEGORIES } from '@/lib/utils';
 import { X, Camera, Upload, Trash2, AlertCircle, Gift, Building2, User, Sparkles, Info, Check } from 'lucide-react';
-import { FESTIVAL_OPTIONS } from '@/lib/festivalUtils';
-import FestivalCombobox from './FestivalCombobox';
 
 export default function AddDonationModal() {
   const { addDonationModalOpen, setAddDonationModalOpen, user, triggerRefresh } = useAuth();
 
   const [fromType, setFromType] = useState<'flat' | 'other'>('flat');
-  const [festival, setFestival] = useState<string>('Ganesh Festival');
+  const [festival, setFestival] = useState<string>('General Utsav Fund');
   const [flats, setFlats] = useState<any[]>([]);
   const [flatNumberInput, setFlatNumberInput] = useState('');
   const [otherContributors, setOtherContributors] = useState<any[]>([]);
@@ -408,14 +406,6 @@ export default function AddDonationModal() {
               Enter individual donor or family member name. Supports multiple entries from the same flat with different donors.
             </p>
           </div>
-
-          {/* Festival / Event Selection */}
-          <FestivalCombobox
-            value={festival}
-            onChange={setFestival}
-            label="Festival / Event *"
-            placeholder="Select or type new festival (e.g. Dahi Handi)..."
-          />
 
           {/* Donation Type & Item Name */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

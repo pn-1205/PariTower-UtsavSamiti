@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   CreditCard,
@@ -26,6 +27,7 @@ export default function ManagePaymentAccountsModal({
   onClose,
   onAccountsUpdated,
 }: ManagePaymentAccountsModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -56,6 +58,10 @@ export default function ManagePaymentAccountsModal({
   };
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       fetchAccounts();
       setShowAddForm(false);
@@ -63,7 +69,7 @@ export default function ManagePaymentAccountsModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleSetDefault = async (id: string) => {
     try {
@@ -149,11 +155,11 @@ export default function ManagePaymentAccountsModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-150">
-      <div className="bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/60 backdrop-blur-sm p-3 sm:p-4 md:p-6 flex min-h-full items-center justify-center animate-in fade-in-0 duration-150">
+      <div className="relative bg-white rounded-3xl shadow-2xl border border-stone-200 w-full max-w-2xl overflow-hidden flex flex-col my-auto max-h-[85vh]">
         {/* Header */}
-        <div className="bg-slate-900 p-5 text-white flex items-center justify-between">
+        <div className="bg-slate-900 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-amber-500 text-slate-950 rounded-xl">
               <CreditCard className="w-5 h-5" />
@@ -390,6 +396,7 @@ export default function ManagePaymentAccountsModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

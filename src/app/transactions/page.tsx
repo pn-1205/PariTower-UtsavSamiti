@@ -26,10 +26,16 @@ import {
   Sparkles,
   Landmark,
   Wallet,
+  Lock,
+  Unlock,
+  ArrowUpDown,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
+import CloseEventModal from '@/components/CloseEventModal';
 
 export default function TransactionsPage() {
-  const { setLightboxAttachment, setTransferFundModalOpen, isAuthenticated, refreshTrigger } = useAuth();
+  const { user, setLightboxAttachment, setTransferFundModalOpen, isAuthenticated, refreshTrigger, triggerRefresh } = useAuth();
   const [transactions, setTransactions] = useState<any[]>(() => getCached('transactions') || []);
   const [loading, setLoading] = useState(() => !getCached('transactions'));
   const [custodianBalances, setCustodianBalances] = useState<any[]>([]);
@@ -43,6 +49,14 @@ export default function TransactionsPage() {
   const [selectedFy, setSelectedFy] = useState<string>(getCurrentFinancialYear());
   const [selectedFestival, setSelectedFestival] = useState<string>('all');
 
+  // Ledger Lifecycle & Carry Forward State
+  const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [closingBalance, setClosingBalance] = useState<number>(0);
+  const [festivalInfo, setFestivalInfo] = useState<any>(null);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [closeModalOpen, setCloseModalOpen] = useState(false);
+  const [reopening, setReopening] = useState(false);
+
   // Table In-Page Filters
   const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense' | 'donation'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +69,7 @@ export default function TransactionsPage() {
       if (selectedFestival !== 'all') params.set('festival', selectedFestival);
       if (selectedFy !== 'all') params.set('fy', selectedFy);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
+      params.set('sort', sortOrder);
 
       const res = await fetch(`/api/transactions?${params.toString()}`);
       if (res.ok) {
@@ -63,14 +78,19 @@ export default function TransactionsPage() {
         if (json.custodianBalances) {
           setCustodianBalances(json.custodianBalances);
         }
+        if (json.festivalInfo !== undefined) {
+          setFestivalInfo(json.festivalInfo);
+        }
         if (json.totals) {
+          setOpeningBalance(json.totals.openingBalance || 0);
+          setClosingBalance(json.totals.closingBalance || 0);
           const sumObj = {
             totalReceived: json.totals.totalIncome,
             totalExpenses: json.totals.totalExpense,
             currentBalance: json.totals.netBalance,
           };
           setSummaryData(sumObj);
-          if (typeFilter === 'all' && selectedFestival === 'all' && selectedFy === 'all' && !searchQuery.trim()) {
+          if (typeFilter === 'all' && selectedFestival === 'all' && selectedFy === 'all' && !searchQuery.trim() && sortOrder === 'desc') {
             setCached('transactions', json.transactions || []);
             setCached('summaryData', sumObj);
           }
@@ -85,11 +105,35 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactionsAndSummary();
-  }, [typeFilter, selectedFestival, selectedFy, searchQuery, refreshTrigger]);
+  }, [typeFilter, selectedFestival, selectedFy, searchQuery, sortOrder, refreshTrigger]);
+
+  const handleReopen = async () => {
+    if (!selectedFestival || selectedFestival === 'all') return;
+    if (!confirm(`Are you sure you want to reopen and unfreeze the '${selectedFestival}' ledger?`)) return;
+    try {
+      setReopening(true);
+      const res = await fetch('/api/festivals/reopen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ festivalName: selectedFestival }),
+      });
+      if (res.ok) {
+        triggerRefresh();
+        fetchTransactionsAndSummary();
+      }
+    } catch (e) {
+      console.error('Reopen error:', e);
+    } finally {
+      setReopening(false);
+    }
+  };
 
   const exportOptions = {
     festival: selectedFestival,
     fy: selectedFy,
+    openingBalance: openingBalance,
+    closingBalance: closingBalance,
+    isFrozen: festivalInfo?.status === 'CLOSED',
   };
 
   const handleExcelExport = async () => {
@@ -165,49 +209,136 @@ export default function TransactionsPage() {
         onOpenTransferModal={() => setTransferFundModalOpen(true)}
       />
 
-      {/* Summary Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
-            <span>Total Inflow</span>
-            <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+      {/* Event Lifecycle & Audit Status Banner */}
+      {festivalInfo?.isFrozen ? (
+        <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white p-4 rounded-2xl border border-stone-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/20 border border-amber-400/30 text-amber-400 rounded-xl shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-white">
+                  {festivalInfo.name} — Audited & Frozen Event Ledger
+                </h3>
+                <span className="text-[10px] font-black uppercase bg-amber-500 text-stone-950 px-2 py-0.5 rounded-full">
+                  Frozen
+                </span>
+              </div>
+              <p className="text-xs text-stone-300 mt-0.5">
+                Closed on {formatDate(festivalInfo.closedAt)} • Final Surplus Balance Carried Forward: <span className="font-bold text-amber-300 font-mono">{formatCurrency(festivalInfo.closingBalance)}</span>
+              </p>
+            </div>
           </div>
-          <div className="text-2xl font-black text-stone-900 mt-2">
-            {formatCurrency(summaryData.totalReceived)}
+
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={handleReopen}
+              disabled={reopening}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-stone-200 text-xs font-bold rounded-xl border border-white/20 transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+              title="Reopen and unfreeze this festival ledger"
+            >
+              <Unlock className="w-3.5 h-3.5 text-amber-400" />
+              {reopening ? 'Reopening...' : 'Reopen Ledger'}
+            </button>
+          )}
+        </div>
+      ) : selectedFestival !== 'all' && (
+        <div className="bg-emerald-50/80 border border-emerald-200 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl shrink-0">
+              <Sparkles className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-stone-900">
+                  Active Event Cycle: {selectedFestival}
+                </h3>
+                <span className="text-[10px] font-bold uppercase bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                  Live Active
+                </span>
+              </div>
+              <p className="text-xs text-emerald-900 mt-0.5">
+                Balance Carried Forward (B/F): <span className="font-bold font-mono">{formatCurrency(openingBalance)}</span>
+              </p>
+            </div>
+          </div>
+
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => setCloseModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-black text-amber-300 hover:text-amber-200 text-xs font-black rounded-xl shadow-xs transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+              title="Finalize this festival, freeze transactions, and carry forward surplus to new event"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              Close Event & Freeze Ledger
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 4-Card Balance Carry-Forward Financial Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Balance Brought Forward (Opening Balance) */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-800">
+            <span>Opening Balance (B/F)</span>
+            <Calendar className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-2xl font-black text-stone-900 mt-2 font-mono">
+            {formatCurrency(openingBalance)}
           </div>
           <div className="text-[11px] text-stone-500 mt-0.5">
-            {selectedFestival === 'all' ? 'All festivals' : selectedFestival} • {selectedFy === 'all' ? 'All years' : `FY ${selectedFy}`}
+            Carried forward from prior period
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-500"></div>
+        </div>
+
+        {/* Card 2: Total Inflow */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800">
+            <span>New Donations (+)</span>
+            <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-black text-stone-900 mt-2 font-mono">
+            +{formatCurrency(summaryData.totalReceived)}
+          </div>
+          <div className="text-[11px] text-stone-500 mt-0.5">
+            General society festival fund
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
         </div>
 
+        {/* Card 3: Total Outflow */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 relative overflow-hidden">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-800">
-            <span>Total Outflow</span>
+            <span>Event Expenses (−)</span>
             <ArrowDownRight className="w-4 h-4 text-rose-600" />
           </div>
-          <div className="text-2xl font-black text-stone-900 mt-2">
-            {formatCurrency(summaryData.totalExpenses)}
+          <div className="text-2xl font-black text-stone-900 mt-2 font-mono">
+            -{formatCurrency(summaryData.totalExpenses)}
           </div>
           <div className="text-[11px] text-stone-500 mt-0.5">
-            {selectedFestival === 'all' ? 'All festivals' : selectedFestival} • {selectedFy === 'all' ? 'All years' : `FY ${selectedFy}`}
+            {selectedFestival === 'all' ? 'All events combined' : `${selectedFestival} expenses`}
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
         </div>
 
+        {/* Card 4: Net Closing Balance Carried Forward */}
         <div className="bg-slate-900 text-white p-4 rounded-2xl shadow-sm border border-slate-800 relative overflow-hidden">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-amber-300">
-            <span>Net Balance</span>
+            <span>Carried Forward (C/F)</span>
             <span className="text-[10px] bg-white/10 text-amber-300 px-2 py-0.5 rounded-full font-bold">
-              Filtered Cash
+              Net Surplus
             </span>
           </div>
-          <div className="text-2xl font-black text-white mt-2">
-            {formatCurrency(summaryData.currentBalance)}
+          <div className="text-2xl font-black text-white mt-2 font-mono">
+            {formatCurrency(closingBalance)}
           </div>
           <div className="text-[11px] text-rose-200/80 mt-0.5">
-            Surplus balance available
+            Cumulative closing balance
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-amber-400"></div>
         </div>
       </div>
 
@@ -252,16 +383,16 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* Filter Bar (Search + Type filter) */}
-      <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+      {/* Filter Bar (Search + Type filter + Sort Toggle) */}
+      <div className="bg-white/95 backdrop-blur-xs p-3 sm:p-3.5 rounded-2xl shadow-sm border border-stone-200/90 grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 relative z-10">
         <div className="sm:col-span-7 relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           <input
             type="text"
             placeholder="Search by donor, flat number, vendor, category, festival..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-rose-800 focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-stone-50 border border-stone-200 text-stone-900 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:outline-none transition-all placeholder:text-stone-400"
           />
         </div>
 
@@ -299,6 +430,50 @@ export default function TransactionsPage() {
             Donations
           </button>
         </div>
+
+        {/* Sort Order & Ledger Quick Info Sub-bar */}
+        <div className="sm:col-span-12 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-stone-100">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-stone-700 bg-stone-100/90 hover:bg-stone-200/80 rounded-xl transition-all border border-stone-200 cursor-pointer"
+              title="Toggle sorting order between newest first and passbook chronological order"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-stone-500" />
+              <span>{sortOrder === 'desc' ? 'Order: Newest First' : 'Order: Oldest First (Passbook)'}</span>
+            </button>
+            <span className="text-[11px] text-stone-400 font-medium">
+              Showing {transactions.length} records
+            </span>
+          </div>
+
+          <div className="text-xs font-semibold text-stone-600">
+            Opening Balance (B/F): <span className="font-bold text-stone-900 font-mono">{formatCurrency(openingBalance)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Opening Balance (B/F) Header Row */}
+      <div className="bg-stone-50/90 border border-stone-200 px-4 py-3 rounded-2xl flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+          <div>
+            <span className="text-xs font-black text-stone-800 uppercase tracking-wider block">
+              Balance Brought Forward (Opening Balance)
+            </span>
+            <span className="text-[10px] text-stone-500">
+              {selectedFestival !== 'all'
+                ? `Carried forward to ${selectedFestival}`
+                : selectedFy !== 'all'
+                ? `Carried forward into FY ${selectedFy}`
+                : 'Initial ledger balance'}
+            </span>
+          </div>
+        </div>
+        <span className="text-sm sm:text-base font-black text-stone-900 font-mono bg-white px-3 py-1 rounded-xl border border-stone-200/80">
+          {formatCurrency(openingBalance)}
+        </span>
       </div>
 
       {/* Ledger Table */}
@@ -355,9 +530,13 @@ export default function TransactionsPage() {
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       <span className="font-bold text-xs sm:text-sm text-gray-900 truncate max-w-full">{t.party}</span>
                       
-                      {/* Festival Badge */}
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200/70 shrink-0">
-                        {t.festival || 'Ganesh Festival'}
+                      {/* Festival / Fund Badge */}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                        isDeposit
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+                          : 'bg-rose-50 text-rose-900 border-rose-200/70'
+                      }`}>
+                        {isDeposit ? 'General Utsav Fund' : (t.festival || 'Ganesh Festival')}
                       </span>
 
                       {/* Category Badge */}
@@ -407,24 +586,36 @@ export default function TransactionsPage() {
                   </div>
                 </div>
 
-                {/* Amount */}
-                <div className="text-right shrink-0">
-                  {isDeposit ? (
-                    <span className="text-base sm:text-lg font-black text-emerald-600 tracking-tight">
-                      +{formatCurrency(t.amount)}
-                    </span>
-                  ) : isExpense ? (
-                    <span className="text-base sm:text-lg font-black text-rose-600 tracking-tight">
-                      -{formatCurrency(Math.abs(t.amount))}
-                    </span>
-                  ) : (
-                    <div>
-                      <span className="text-sm font-bold text-amber-700">In-Kind</span>
-                      {t.estimatedValue && (
-                        <div className="text-[10px] text-gray-400">
-                          Est. {formatCurrency(t.estimatedValue)}
-                        </div>
-                      )}
+                {/* Amount & Running Balance */}
+                <div className="text-right shrink-0 space-y-1">
+                  <div>
+                    {isDeposit ? (
+                      <span className="text-sm sm:text-base font-black text-emerald-600 tracking-tight">
+                        +{formatCurrency(t.amount)}
+                      </span>
+                    ) : isExpense ? (
+                      <span className="text-sm sm:text-base font-black text-rose-600 tracking-tight">
+                        -{formatCurrency(Math.abs(t.amount))}
+                      </span>
+                    ) : (
+                      <div>
+                        <span className="text-xs font-bold text-amber-700">In-Kind</span>
+                        {t.estimatedValue && (
+                          <div className="text-[10px] text-gray-400">
+                            Est. {formatCurrency(t.estimatedValue)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {t.runningBalance !== undefined && (
+                    <div
+                      className="inline-flex items-center gap-1 bg-stone-100/90 px-2.5 py-0.5 rounded-lg border border-stone-200/80 font-mono text-[11px] font-black text-stone-900"
+                      title="Cumulative running cash balance after this transaction"
+                    >
+                      <span className="text-[9px] text-stone-400 font-sans font-bold">Bal:</span>
+                      <span>{formatCurrency(t.runningBalance)}</span>
                     </div>
                   )}
                 </div>
@@ -433,6 +624,41 @@ export default function TransactionsPage() {
           })}
         </div>
       )}
+
+      {/* Closing Balance (C/F) Footer Row */}
+      {transactions.length > 0 && (
+        <div className="bg-amber-50/90 border border-amber-200/90 p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div>
+            <span className="text-xs sm:text-sm font-black text-amber-950 uppercase tracking-wider block">
+              Balance Carried Forward (Closing Balance)
+            </span>
+            <span className="text-[11px] text-amber-800">
+              {festivalInfo?.isFrozen
+                ? `Audited surplus locked on ${formatDate(festivalInfo.closedAt)}`
+                : 'Cumulative net surplus available to carry forward into next period'}
+            </span>
+          </div>
+          <span className="text-base sm:text-xl font-black text-amber-950 font-mono bg-white px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-2xs self-start sm:self-auto">
+            {formatCurrency(closingBalance)}
+          </span>
+        </div>
+      )}
+
+      {/* Close Event & Freeze Ledger Modal */}
+      <CloseEventModal
+        isOpen={closeModalOpen}
+        onClose={() => setCloseModalOpen(false)}
+        festivalName={selectedFestival}
+        openingBalance={openingBalance}
+        totalDonations={summaryData.totalReceived}
+        totalExpenses={summaryData.totalExpenses}
+        closingBalance={closingBalance}
+        onSuccess={(newFest) => {
+          if (newFest) setSelectedFestival(newFest);
+          triggerRefresh();
+          fetchTransactionsAndSummary();
+        }}
+      />
     </div>
   );
 }

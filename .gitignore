@@ -39,3 +39,5 @@ Thumbs.db
 Pari_Election_Data.xlsx
 *.xlsx
 *.xls
+*.tsbuildinfo
+graphify-out/

@@ -46,11 +46,11 @@ export async function GET() {
 
     const festivals = Array.from(set);
 
-    return NextResponse.json({ festivals });
+    return NextResponse.json({ festivals, festivalDetails: dbFestivals });
   } catch (error: any) {
     console.error('Festivals GET error:', error);
     // Fallback to defaults
-    return NextResponse.json({ festivals: DEFAULT_FESTIVALS });
+    return NextResponse.json({ festivals: DEFAULT_FESTIVALS, festivalDetails: [] });
   }
 }
 

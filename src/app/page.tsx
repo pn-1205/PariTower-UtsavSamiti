@@ -15,9 +15,7 @@ import {
   Scale,
   Gift,
   Sparkles,
-  Radio,
 } from 'lucide-react';
-import { Marquee } from '@/components/ui/Marquee';
 import { NumberTicker } from '@/components/ui/NumberTicker';
 
 export default function DashboardPage() {
@@ -80,43 +78,6 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 sm:py-6 space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
-      {/* MAGIC UI LIVE ANNOUNCEMENT MARQUEE */}
-      <div className="rounded-2xl border border-stone-200/90 bg-white/80 backdrop-blur-md p-1 shadow-2xs overflow-hidden w-full max-w-full">
-        <div className="flex items-center w-full min-w-0 overflow-hidden">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200/80 text-[11px] font-extrabold uppercase tracking-wider rounded-xl shrink-0 shadow-2xs">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-amber-700" />
-            <span>Live Updates</span>
-          </div>
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <Marquee pauseOnHover={true} className="text-xs font-bold text-stone-700">
-              <div className="flex items-center gap-6">
-                <span className="flex items-center gap-1.5 text-stone-900 font-extrabold">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  Pari Tower Ganesh Utsav 2026
-                </span>
-                <span className="text-stone-300">•</span>
-                <span className="flex items-center gap-1 text-stone-700">
-                  ⚡ 100% Direct Bank UPI Transfer (0% Gateway Commission)
-                </span>
-                <span className="text-stone-300">•</span>
-                <span className="flex items-center gap-1 text-emerald-800 font-semibold">
-                  🛡️ Verified by Samiti Committee
-                </span>
-                <span className="text-stone-300">•</span>
-                <span className="flex items-center gap-1 text-stone-700">
-                  🏛️ Official Custodians: Suryakant Sabale & Rajeshwar Gawali
-                </span>
-                <span className="text-stone-300">•</span>
-                <span className="flex items-center gap-1 text-amber-800 font-bold">
-                  🙏 Ganpati Bappa Morya! Mangal Murti Morya!
-                </span>
-                <span className="text-stone-300">•</span>
-              </div>
-            </Marquee>
-          </div>
-        </div>
-      </div>
-
       {/* QUICK DONATION & CONTRIBUTION WIDGET (Top Section) */}
       <Suspense fallback={<div className="h-48 bg-stone-100 rounded-3xl animate-pulse" />}>
         <QuickDonateWidget />
