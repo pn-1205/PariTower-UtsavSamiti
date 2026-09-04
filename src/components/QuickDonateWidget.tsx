@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { DEFAULT_FESTIVALS } from '@/lib/festivalUtils';
 import { formatCurrency } from '@/lib/utils';
+import { BorderBeam } from '@/components/ui/BorderBeam';
+import { triggerFestiveConfetti } from '@/components/ui/Confetti';
 
 export default function QuickDonateWidget() {
   const searchParams = useSearchParams();
@@ -245,6 +247,7 @@ export default function QuickDonateWidget() {
         .then((data) => {
           if (data.receiptNo) {
             setSuccessReceipt(data);
+            triggerFestiveConfetti();
           }
         })
         .catch((err) => console.error('Error logging payment:', err));
@@ -294,6 +297,7 @@ export default function QuickDonateWidget() {
         setError(data.error || 'Failed to record payment.');
       } else {
         setSuccessReceipt(data);
+        triggerFestiveConfetti();
       }
     } catch (err) {
       console.error(err);
@@ -306,8 +310,11 @@ export default function QuickDonateWidget() {
   return (
     <div
       id="donate-section"
-      className="bg-gradient-to-br from-rose-950 via-rose-900 to-amber-950 text-white rounded-3xl shadow-xl p-5 sm:p-7 border border-amber-500/30 relative overflow-hidden"
+      className="bg-gradient-to-br from-rose-950 via-rose-900 to-amber-950 text-white rounded-3xl shadow-2xl p-5 sm:p-7 border border-amber-500/40 relative overflow-hidden ring-1 ring-amber-400/20"
     >
+      {/* Magic UI Border Beam animated aura */}
+      <BorderBeam size={320} duration={12} borderWidth={2} colorFrom="#f59e0b" colorTo="#ef4444" />
+
       {/* Subtle sacred gold background glow */}
       <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -327,15 +334,21 @@ export default function QuickDonateWidget() {
           </p>
         </div>
 
-        {/* Receiver Account Badge */}
-        <div className="bg-black/30 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/10 text-xs">
-          <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
-            Official Receiving Account:
-          </span>
-          <span className="font-extrabold text-white text-sm">
+        {/* SmoothUI Receiver Account Badge with Live Status Indicator */}
+        <div className="bg-black/40 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-amber-400/30 text-xs shadow-inner">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider block">
+              Official Receiving Account:
+            </span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </div>
+          <span className="font-extrabold text-white text-sm block">
             {activeAccount.name}
           </span>
-          <span className="text-[11px] text-rose-200 block font-mono">
+          <span className="text-[11px] text-amber-200 block font-mono">
             {activeAccount.upiId || 'Direct UPI'}
           </span>
         </div>
@@ -607,15 +620,15 @@ export default function QuickDonateWidget() {
                 </div>
               )}
 
-              {/* Main Universal 1-Tap Intent Link */}
+              {/* Main Universal 1-Tap Intent Link with Shimmer Effect */}
               <a
                 href={primaryUpiLink}
                 onClick={(e) => handlePayClick(e, primaryUpiLink)}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:brightness-110 text-rose-950 font-black text-sm rounded-xl shadow-lg transition-all transform active:scale-95 text-center cursor-pointer select-none"
+                className="w-full flex items-center justify-center gap-2.5 py-4 px-4 shimmer-bg hover:brightness-105 text-rose-950 font-black text-sm rounded-xl shadow-xl transition-all transform active:scale-95 text-center cursor-pointer select-none ring-2 ring-amber-300/80 shadow-amber-500/20"
               >
-                <Smartphone className="w-4.5 h-4.5 shrink-0" />
-                <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
-                <ArrowRight className="w-4 h-4 shrink-0" />
+                <Smartphone className="w-5 h-5 shrink-0 animate-bounce" />
+                <span className="tracking-wide">Pay via UPI App (GPay / PhonePe / Paytm)</span>
+                <ArrowRight className="w-4.5 h-4.5 shrink-0" />
               </a>
 
               {/* App-specific shortcuts */}

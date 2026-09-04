@@ -44,6 +44,40 @@ module.exports = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        marquee: {
+          from: { transform: "translateX(0%)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        "marquee-reverse": {
+          from: { transform: "translateX(-50%)" },
+          to: { transform: "translateX(0%)" },
+        },
+        shimmer: {
+          "0%, 100%": {
+            "background-position": "200% 0",
+          },
+          "50%": {
+            "background-position": "-200% 0",
+          },
+        },
+        "border-beam": {
+          "100%": {
+            "offset-distance": "100%",
+          },
+        },
+        pulseGlow: {
+          "0%, 100%": { opacity: "0.4", transform: "scale(1)" },
+          "50%": { opacity: "0.8", transform: "scale(1.05)" },
+        },
+      },
+      animation: {
+        marquee: "marquee 35s linear infinite",
+        "marquee-reverse": "marquee-reverse 35s linear infinite",
+        shimmer: "shimmer 3s ease-in-out infinite",
+        "border-beam": "border-beam calc(var(--duration)*1s) infinite linear",
+        "pulse-glow": "pulseGlow 3s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
